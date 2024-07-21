@@ -40,7 +40,7 @@ public class UsersController {
     }
 
     @PostMapping("/sign-up")
-    public String signUp(@ModelAttribute("registerRequest") @Valid UsersPOJO user, BindingResult bindingResult, Model model){
+    public String signUp(@ModelAttribute("registerRequest") @Valid UsersPOJO user, BindingResult bindingResult){
         if (bindingResult.hasErrors()) {
             return "registration";
         }
@@ -48,15 +48,12 @@ public class UsersController {
         try {
 
             if (!usersService.saveUser(user)){
-                model.addAttribute("error", "Something went wrong");
-                return "registration";
+                return "redirect:/sign-up?error=3";
             }
         }catch (UserAlreadyExistException uaeEx){
-            model.addAttribute("error", "Username already exist");
-            return "registration";
+            return "redirect:/sign-up?error=1";
         }catch (IllegalArgumentException iaEx){
-            model.addAttribute("error", "Username and password must be not empty");
-            return "registration";
+            return "redirect:/sign-up?error=2";
         }
 
         return "redirect:/sign-in";
@@ -64,28 +61,23 @@ public class UsersController {
 
     @PostMapping("/sign-in")
     public String signIn(@ModelAttribute("loginRequest") @Valid UsersPOJO user, BindingResult bindingResult) {
-        System.out.println(user.getUsername() + " " + user.getPassword());
+
         if (bindingResult.hasErrors()) {
             return "login";
         }
 
         try {
             UsersPOJO loginUser = usersService.loginUser(user.getUsername(), user.getPassword());
-            if (loginUser == null) {
-                System.out.println("eu");
 
-            }else return "redirect:/home";
+            return "redirect:/home";
         } catch (UsernameNotFoundException unfEx) {
-            System.out.println("eu1");
-//            return "login"; // Redirect to login page with an error message
+
+            return "redirect:/sign-in?error=1";
         } catch (IllegalArgumentException iaEx) {
-            System.out.println("eu2");
-//            return "login"; // Redirect to login page with an error message
-        } catch (Exception ex) {
-            System.out.println("eu3");
-//            return "login"; // Redirect to login page with an error message
+
+            return "redirect:/sign-in?error=2";
         }
-        return "redirect:/home";
+
     }
 
 }
