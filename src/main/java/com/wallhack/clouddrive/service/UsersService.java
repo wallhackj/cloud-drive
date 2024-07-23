@@ -2,6 +2,8 @@ package com.wallhack.clouddrive.service;
 
 import com.wallhack.clouddrive.entity.UsersPOJO;
 import com.wallhack.clouddrive.repository.UsersRepository;
+import lombok.AllArgsConstructor;
+import org.apache.commons.compress.PasswordRequiredException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,12 +15,9 @@ import static com.wallhack.clouddrive.MyUtils.isStringEmpty;
 
 @Service
 @Transactional
+@AllArgsConstructor
 public class UsersService {
     private final UsersRepository usersRepository;
-
-    public UsersService(UsersRepository usersRepository) {
-        this.usersRepository = usersRepository;
-    }
 
     public UsersPOJO loadUserByUsername(String username) throws UsernameNotFoundException {
         Optional<UsersPOJO> user = usersRepository.findByUsername(username);
@@ -41,9 +40,6 @@ public class UsersService {
             throw new UserAlreadyExistException("Username already exists");
 
         } else {
-            UsersPOJO userForSave = new UsersPOJO();
-            user.setUsername(username);
-            user.setPassword(password);
             usersRepository.save(user);
 
             return true;
@@ -75,7 +71,7 @@ public class UsersService {
         return usersRepository.findByUsername(username).isPresent();
     }
 
-    public UsersPOJO loginUser(String username ,String password) throws UsernameNotFoundException,IllegalArgumentException {
+    public UsersPOJO loginUser(String username ,String password) throws UsernameNotFoundException, IllegalArgumentException, PasswordRequiredException {
 
         if (isStringEmpty(username, password)) {
             throw new IllegalArgumentException("Username and password must not be empty");
@@ -84,7 +80,7 @@ public class UsersService {
         UsersPOJO registeredUser = loadUserByUsername(username);
 
         if (!registeredUser.getPassword().equals(password)) {
-            throw new IllegalArgumentException("Wrong password");
+            throw new PasswordRequiredException("Wrong password");
         }
 
         return registeredUser;

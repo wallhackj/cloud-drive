@@ -18,7 +18,7 @@
     <span th:switch="${param.error.toString()}">
         <span th:case="'1'">Username not found.</span>
         <span th:case="'2'">Username and password must not be empty.</span>
-        <span th:case="'3'">Something went wrong.</span>
+        <span th:case="'3'">Incorrect password.</span>
         <span th:case="*">Unknown error occurred.</span>
     </span>
     </div>
