@@ -1,7 +1,7 @@
-package com.wallhack.clouddrive.service;
+package com.wallhack.clouddrive.authentication;
 
-import com.wallhack.clouddrive.entity.UsersPOJO;
-import com.wallhack.clouddrive.repository.UsersRepository;
+import com.wallhack.clouddrive.authentication.entity.UsersPOJO;
+import com.wallhack.clouddrive.authentication.repository.UsersRepository;
 import lombok.AllArgsConstructor;
 import org.apache.commons.compress.PasswordRequiredException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

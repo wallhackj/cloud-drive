@@ -1,9 +1,9 @@
 package com.wallhack.clouddrive.controller;
 
-import com.wallhack.clouddrive.entity.UsersPOJO;
-import com.wallhack.clouddrive.repository.UsersRepository;
-import com.wallhack.clouddrive.service.UserAlreadyExistException;
-import com.wallhack.clouddrive.service.UsersService;
+import com.wallhack.clouddrive.authentication.entity.UsersPOJO;
+import com.wallhack.clouddrive.authentication.repository.UsersRepository;
+import com.wallhack.clouddrive.authentication.UserAlreadyExistException;
+import com.wallhack.clouddrive.authentication.UsersService;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

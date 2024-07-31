@@ -1,8 +1,8 @@
-package com.wallhack.clouddrive.controller;
+package com.wallhack.clouddrive.authentication.controller;
 
-import com.wallhack.clouddrive.entity.UsersPOJO;
-import com.wallhack.clouddrive.service.UserAlreadyExistException;
-import com.wallhack.clouddrive.service.UsersService;
+import com.wallhack.clouddrive.authentication.entity.UsersPOJO;
+import com.wallhack.clouddrive.authentication.UserAlreadyExistException;
+import com.wallhack.clouddrive.authentication.UsersService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.apache.commons.compress.PasswordRequiredException;
@@ -58,7 +58,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/sign-in")
-    public String signIn(@ModelAttribute("loginRequest") @Valid UsersPOJO user, BindingResult bindingResult) {
+    public String signIn(@ModelAttribute("loginRequest") @Valid UsersPOJO user, BindingResult bindingResult, Model model) {
 
         if (bindingResult.hasErrors()) {
             return "login";
@@ -68,7 +68,8 @@ public class AuthenticationController {
             UsersPOJO loginUser = usersService.loginUser(user.getUsername(), user.getPassword());
 
             if (loginUser != null) {
-                return "redirect:/home";
+                model.addAttribute("username", loginUser.getUsername());
+                return "home";
             }else throw new UsernameNotFoundException("Invalid username or password");
 
         } catch (UsernameNotFoundException unfEx) {

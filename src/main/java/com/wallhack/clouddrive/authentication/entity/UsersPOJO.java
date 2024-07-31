@@ -1,4 +1,4 @@
-package com.wallhack.clouddrive.entity;
+package com.wallhack.clouddrive.authentication.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
