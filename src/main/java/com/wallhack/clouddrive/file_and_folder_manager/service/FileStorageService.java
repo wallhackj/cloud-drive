@@ -1,11 +1,11 @@
 package com.wallhack.clouddrive.file_and_folder_manager.service;
 
+import com.wallhack.clouddrive.file_and_folder_manager.entity.FileInfo;
 import lombok.AllArgsConstructor;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
@@ -15,7 +15,9 @@ import software.amazon.awssdk.services.s3.model.*;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -30,21 +32,20 @@ public class FileStorageService {
                 .flatMapSequential(dataBuffer -> Flux.fromIterable(dataBuffer::readableByteBuffers));
     }
 
-    public CompletableFuture<String> uploadFile(String bucketName, MultipartFile file) {
+    public CompletableFuture<String> uploadFile(String bucketName, FileInfo file) {
        return bucketManager.createBucket(bucketName)
                .thenCompose(bucket -> {
-                   var fileName = file.getOriginalFilename();
-
                    PutObjectRequest putRequest = PutObjectRequest.builder()
                            .bucket(bucket)
-                           .key(fileName)
+                           .key(file.key())
                            .build();
 
-                   try (InputStream inputStream = file.getInputStream()){
+                   try (InputStream inputStream = file.file().getInputStream()){
 
                        return client.putObject(putRequest,AsyncRequestBody.fromPublisher(toFlux(inputStream)))
-                               .thenApply(resp -> fileName);
+                               .thenApply(resp -> file.key());
                    }catch (Exception e){
+
                        return CompletableFuture.failedFuture(e);
                    }
                });
@@ -98,6 +99,7 @@ public class FileStorageService {
                             .contentDisposition("attachment; filename=" + newKey)
                             .metadataDirective(MetadataDirective.REPLACE)
                             .build();
+
                     return client.copyObject(copyRequest)
                             .thenCompose(copyResponse -> deleteFile(bucketName, key)
                                     .thenApply(deleteResponse -> {
@@ -107,6 +109,26 @@ public class FileStorageService {
                                             throw new RuntimeException("Failed to delete original file");
                                         }
                                     }));
+                });
+    }
+
+    public CompletableFuture<List<FileInfo>> listAllFiles(String bucketName) {
+        return bucketManager.bucketExists(bucketName)
+                .thenCompose(bucket -> {
+                    if (!bucket){
+
+                        return CompletableFuture.failedFuture(new RuntimeException("Bucket does not exist"));
+                    }else {
+                        ListObjectsV2Request listV2Request = ListObjectsV2Request.builder()
+                                .bucket(bucketName)
+                                .build();
+                        return client.listObjectsV2(listV2Request)
+                                .thenApply(result -> result.contents()
+                                        .stream()
+                                        .map(s3Object -> new FileInfo(s3Object.key()
+                                                , s3Object.lastModified().toString(), null))
+                                        .collect(Collectors.toList()));
+                    }
                 });
     }
 

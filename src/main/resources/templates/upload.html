@@ -27,16 +27,18 @@
 
     <button type="submit">Download</button>
 </form>
+
 <h1>Delete File</h1>
 <form id="deleteForm">
     <label for="delete-username">Username:</label>
     <input type="text" id="delete-username" name="username" required><br><br>
 
     <label for="filename">Filename:</label>
-    <input type="text" id="deletedFileName" name="fileName" required><br><br>
+    <label for="deletedFileName"></label><input type="text" id="deletedFileName" name="fileName" required><br><br>
 
     <button type="button" onclick="sendDeleteRequest()">Delete</button>
 </form>
+
 <h1>Rename File</h1>
 <form id="renameForm">
     <label for="username">Username:</label>
@@ -50,6 +52,32 @@
 
     <button type="button" onclick="sendRenameRequest()">Rename</button>
 </form>
+
+<h1>List Files</h1>
+<form action="/list" method="get">
+    <label for="list-username">Username:</label>
+    <input type="text" id="list-username" name="username" required><br><br>
+    <button type="submit">List Files</button>
+</form>
+
+<div>
+    <h2>Files:</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Key</th>
+            <th>Last Modified</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="file : ${files}">
+            <td th:text="${file.key}"></td>
+            <td th:text="${file.lastModified}"></td>
+        </tr>
+        </tbody>
+    </table>
+    <p th:if="${error}" th:text="${error}"></p>
+</div>
 
 <script>
     function sendRenameRequest() {
@@ -75,6 +103,7 @@
                 alert('Error renaming file');
             });
     }
+
     function sendDeleteRequest() {
         const form = document.getElementById('deleteForm');
         const formData = new FormData(form);
@@ -101,7 +130,5 @@
             });
     }
 </script>
-
-
 </body>
 </html>

@@ -1,5 +1,6 @@
 package com.wallhack.clouddrive.file_and_folder_manager.controller;
 
+import com.wallhack.clouddrive.file_and_folder_manager.entity.FileInfo;
 import com.wallhack.clouddrive.file_and_folder_manager.service.FileStorageService;
 import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 
 @Controller()
@@ -28,7 +31,8 @@ public class FileController {
     @PostMapping("/upload")
     public Mono<ResponseEntity<String>> handleFileUpload(@RequestParam("username") String username,
                                                          @RequestParam("file") MultipartFile file){
-        return Mono.fromFuture(() -> fileService.uploadFile(username, file))
+        return Mono.fromFuture(() -> fileService.uploadFile(username, new FileInfo(file.getOriginalFilename(),
+                        "never", file)))
                 .flatMap(uploadResult -> Mono.just(ResponseEntity.ok("File uploaded successfully")))
                 .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("File upload failed: " + e.getMessage())));
@@ -41,7 +45,8 @@ public class FileController {
         return Mono.fromFuture(() -> fileService.downloadFile(username, fileName))
                 .flatMap(this::fluxOfDataBufferToByteArray)
                 .map(bytes -> ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""
+                                + fileName + "\"")
                         .body(bytes))
                 .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
@@ -56,7 +61,9 @@ public class FileController {
                     } else return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
 
                 })
-                .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting file: " + e.getMessage())));
+                .onErrorResume(e -> Mono.just(
+                        ResponseEntity.status(
+                                HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting file: " + e.getMessage())));
     }
 
     @PutMapping("/rename")
@@ -69,6 +76,13 @@ public class FileController {
                         return ResponseEntity.ok("File renamed successfully");
                     }else return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
                 })
+                .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
+    }
+
+    @GetMapping("/list")
+    public Mono<ResponseEntity<List<FileInfo>>> handleFileList(@RequestParam("username") String username) {
+        return Mono.fromFuture(() -> fileService.listAllFiles(username))
+                .map(files -> ResponseEntity.ok().body(files))
                 .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
 
