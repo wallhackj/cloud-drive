@@ -34,4 +34,5 @@ public class MinioConfig {
                 .credentialsProvider(provider)
                 .build();
     }
+
 }

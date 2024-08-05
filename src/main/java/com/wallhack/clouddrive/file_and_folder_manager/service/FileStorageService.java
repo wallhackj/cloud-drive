@@ -40,9 +40,9 @@ public class FileStorageService {
                            .key(file.key())
                            .build();
 
-                   try (InputStream inputStream = file.file().getInputStream()){
+                   try {
 
-                       return client.putObject(putRequest,AsyncRequestBody.fromPublisher(toFlux(inputStream)))
+                       return client.putObject(putRequest,AsyncRequestBody.fromPublisher(toFlux(file.file())))
                                .thenApply(resp -> file.key());
                    }catch (Exception e){
 

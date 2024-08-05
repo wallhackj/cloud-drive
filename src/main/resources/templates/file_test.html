@@ -7,7 +7,7 @@
 </head>
 <body>
 <h1>Upload File</h1>
-<form action="/upload" method="post" enctype="multipart/form-data">
+<form action="/uploadFile" method="post" enctype="multipart/form-data">
     <label for="upload-username">Username:</label>
     <input type="text" id="upload-username" name="username" required><br><br>
 
@@ -18,7 +18,7 @@
 </form>
 
 <h1>Download File</h1>
-<form action="/download" method="get">
+<form action="/downloadFile" method="get">
     <label for="download-username">Username:</label>
     <input type="text" id="download-username" name="username" required><br><br>
 
@@ -54,7 +54,7 @@
 </form>
 
 <h1>List Files</h1>
-<form action="/list" method="get">
+<form action="/listFiles" method="get">
     <label for="list-username">Username:</label>
     <input type="text" id="list-username" name="username" required><br><br>
     <button type="submit">List Files</button>
@@ -87,7 +87,7 @@
         const fileName = formData.get('fileName');
         const newFileName = formData.get('newFileName');
 
-        fetch('/rename', {
+        fetch('/renameFile', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -110,7 +110,7 @@
         const username = formData.get('username');
         const fileName = formData.get('fileName');
 
-        fetch('/delete', {
+        fetch('/deleteFile', {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
