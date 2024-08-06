@@ -6,9 +6,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
@@ -42,10 +40,24 @@ public class FolderController {
                 .map(zipBytes -> ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + folderName + ".zip\"")
                         .body(zipBytes))
-                .onErrorResume(e -> {
-                    e.printStackTrace();
-                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
-                });
+                .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
+    }
+
+    @DeleteMapping("/deleteFolder")
+    public Mono<ResponseEntity<Boolean>> handlerFolderDeleting(@RequestParam("bucketName") String bucketName,
+                                                               @RequestParam("folderName") String folderName) {
+        return folderStorageService.deleteFolder(bucketName, folderName)
+                .map(ResponseEntity::ok)
+                .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
+    }
+
+    @PutMapping("/renameFolder")
+    public Mono<ResponseEntity<String>> handlerFolderRename(@RequestParam("bucketName") String bucketName,
+                                                            @RequestParam("folderName") String folderName,
+                                                            @RequestParam("newFolderName") String newFolderName) {
+        return folderStorageService.renameFolder(bucketName, folderName, newFolderName)
+                .map(ResponseEntity::ok)
+                .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
 
 

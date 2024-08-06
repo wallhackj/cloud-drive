@@ -2,6 +2,7 @@ package com.wallhack.clouddrive.file_and_folder_manager.service;
 
 import com.wallhack.clouddrive.file_and_folder_manager.entity.FileInfo;
 import lombok.AllArgsConstructor;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
@@ -50,46 +51,88 @@ public class FolderStorageService {
     }
 
     public Mono<byte[]> downloadFolder(String bucketName, String folderName) {
-        return Mono.fromCallable(() -> listKeysInFolder(bucketName, folderName))
-                .flatMapMany(keys -> Flux.fromIterable(keys)
-                        .flatMap(key -> Mono.fromFuture(() -> fileStorageService.downloadFile(bucketName, key))
-                                .flatMapMany(flux -> flux) // Flatten Flux<DataBuffer> inside CompletableFuture
-                        )
-                )
+        return listKeysInFolder(bucketName, folderName)
+                .flatMapMany(Flux::fromIterable) // Flatten list of keys into Flux
+                .flatMap(key -> {
+                    // Check if the key represents a folder by checking if it ends with '/'
+                    if (key.endsWith("/")) {
+                        // If it's a folder, recursively download its contents
+                        String subfolderName = key.substring(0, key.length() - 1); // Remove trailing '/'
+                        return downloadFolder(bucketName, subfolderName).flux(); // Recursively call downloadFolder
+                    } else {
+                        // If it's a file, download the file and return its data buffer Flux
+                        return Mono.fromFuture(() -> fileStorageService.downloadFile(bucketName, key))
+                                .flatMapMany(Flux::from); // Flatten CompletableFuture<Flux<DataBuffer>> to Flux<DataBuffer>
+                    }
+                })
+                .cast(DataBuffer.class)
                 .collectList()
                 .flatMap(dataBuffers -> {
-                    // Create filenames list for zipping
-                    List<String> filenames = listKeysInFolder(bucketName, folderName);
-                    return ZipDataBuffer.toZipFlux(dataBuffers, filenames);
+                    // List all keys again to get filenames for zipping
+                    return listKeysInFolder(bucketName, folderName)
+                            .flatMap(filenames -> ZipDataBuffer.toZipFlux(dataBuffers, filenames)); // Zip data buffers with filenames
                 });
     }
 
-    private List<String> listKeysInFolder(String bucketName, String folderName) {
-        List<String> keys = new ArrayList<>();
-        String prefix = folderName.endsWith("/") ? folderName : folderName + "/";
+    private Mono<List<String>> listKeysInFolder(String bucketName, String folderName) {
+        return Mono.fromFuture(() -> CompletableFuture.supplyAsync(() -> {
+            List<String> keys = new ArrayList<>();
+            String prefix = folderName.endsWith("/") ? folderName : folderName + "/";
 
-        ListObjectsV2Request listObjects = ListObjectsV2Request.builder()
-                .bucket(bucketName)
-                .prefix(prefix)
-                .delimiter("/")
-                .build();
+            ListObjectsV2Request listObjects = ListObjectsV2Request.builder()
+                    .bucket(bucketName)
+                    .prefix(prefix)
+                    .build();
 
-        ListObjectsV2Response listObjectsResponse;
-        String continuationToken = null;
+            ListObjectsV2Response listObjectsResponse;
+            String continuationToken = null;
 
-        do {
-            listObjectsResponse = client.listObjectsV2(listObjects.toBuilder().continuationToken(continuationToken).build()).join();
+            do {
+                listObjectsResponse = client.listObjectsV2(listObjects.toBuilder().continuationToken(continuationToken).build()).join();
+                for (S3Object s3Object : listObjectsResponse.contents()) {
+                    keys.add(s3Object.key());
+                }
+                continuationToken = listObjectsResponse.nextContinuationToken();
+            } while (continuationToken != null);
 
-            for (S3Object s3Object : listObjectsResponse.contents()) {
-                keys.add(s3Object.key());
-            }
-
-            continuationToken = listObjectsResponse.nextContinuationToken();
-        } while (continuationToken != null);
-
-        return keys;
+            return keys;
+        }));
     }
 
 
-//    public CompletableFuture<Boolean> deleteFolder(String bucketName, String folderName) {}
+    public Mono<Boolean> deleteFolder(String bucketName, String folderName) {
+        return listKeysInFolder(bucketName, folderName)
+                .flatMapMany(Flux::fromIterable)
+                .flatMap(key -> {
+                    if (key.endsWith("/")) {
+                        // If it's a folder, recursively delete its contents
+                        String subfolderName = key.substring(0, key.length() - 1); // Remove trailing '/'
+                        return deleteFolder(bucketName, subfolderName).flux(); // Recursively call deleteFolder
+                    } else {
+                        // If it's a file, delete the file
+                        return Mono.fromFuture(() -> fileStorageService.deleteFile(bucketName, key));
+                    }
+                })
+                .then(Mono.just(true))
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.just(false);
+                });
+    }
+
+    public Mono<String> renameFolder(String bucketName, String folderName, String newFolderName) {
+        return listKeysInFolder(bucketName, folderName)
+                .flatMapMany(Flux::fromIterable)
+                .flatMap(key -> {
+                    // Construct the new key for each file
+                    String newKey = key.replace(folderName, newFolderName);
+                    return Mono.fromFuture(() -> fileStorageService.renameFile(bucketName, key, newKey));
+                })
+                .then(Mono.just(newFolderName))
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.just(folderName); // Return original folder name if error occurs
+                });
+    }
+
 }
