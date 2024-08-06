@@ -25,11 +25,9 @@ public class FolderController {
     @PostMapping("/uploadDirectory")
     public Mono<ResponseEntity<Boolean>> handlerUploadFolder(@RequestParam("bucketName") String bucketName,
                                                             @RequestParam("directory") List<MultipartFile> files) {
-
-        return Mono.fromFuture(folderStorageService.uploadFolder(bucketName, files))
+        return folderStorageService.uploadFolder(bucketName, files)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
-
     }
 
 
@@ -59,21 +57,5 @@ public class FolderController {
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
-
-
-//    private Mono<byte[]> dataBufferToByteArray(DataBuffer dataBuffer) {
-//        return Mono.just(dataBuffer)
-//                .map(db -> {
-//                    try {
-//                        byte[] bytes = new byte[db.readableByteCount()];
-//                        db.read(bytes);
-//                        return bytes;
-//                    } finally {
-//                        DataBufferUtils.release(db);
-//                    }
-//                });
-//    }
-
-
 
 }
