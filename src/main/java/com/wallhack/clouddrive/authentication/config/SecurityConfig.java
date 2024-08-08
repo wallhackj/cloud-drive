@@ -7,23 +7,26 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/sign-up", "/sign-in", "/logout").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .formLogin(withDefaults())
-                .logout(config -> config
-                        .logoutSuccessUrl("/sign-in")
-                );
-        return http.build();
+        return http.csrf(AbstractHttpConfigurer::disable)
+                .formLogin(login -> login
+                        .loginPage("/sign-in")
+                        .loginProcessingUrl("/sign-in/process")
+                        .defaultSuccessUrl("/file", true)
+                        .failureUrl("/sign-in?error"))
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/", "/sign-in", "/sign-up", "/logout", "/favicon.ico")
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated())
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login"))
+                .build();
     }
 }

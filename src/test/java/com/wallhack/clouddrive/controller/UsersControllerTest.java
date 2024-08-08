@@ -2,7 +2,7 @@ package com.wallhack.clouddrive.controller;
 
 import com.wallhack.clouddrive.authentication.entity.UsersPOJO;
 import com.wallhack.clouddrive.authentication.repository.UsersRepository;
-import com.wallhack.clouddrive.authentication.UserAlreadyExistException;
+import com.wallhack.clouddrive.authentication.repository.exception.UserAlreadyExistException;
 import com.wallhack.clouddrive.authentication.UsersService;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;

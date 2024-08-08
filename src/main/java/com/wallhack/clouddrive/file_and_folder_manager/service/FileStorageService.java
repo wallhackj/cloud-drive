@@ -84,9 +84,7 @@ public class FileStorageService {
                 });
     }
 
-
-
-    public Mono<String> renameFile(String bucketName, String key, String newKey) {
+    public Mono<String> renameOrMoveFile(String bucketName, String key, String newKey) {
         CopyObjectRequest copyRequest = CopyObjectRequest.builder()
                 .sourceBucket(bucketName)
                 .sourceKey(key)
@@ -110,7 +108,6 @@ public class FileStorageService {
                     return Mono.error(new RuntimeException("Failed to rename original file", e));
                 });
     }
-
 
     public Mono<List<FileInfo>> listAllFiles(String bucketName) {
         return Mono.fromFuture(bucketManager.bucketExists(bucketName)

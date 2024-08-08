@@ -127,7 +127,7 @@ public class FolderStorageService {
                 .flatMap(key -> {
                     // Construct the new key for each file
                     String newKey = key.replace(folderName, newFolderName);
-                    return fileStorageService.renameFile(bucketName, key, newKey);
+                    return fileStorageService.renameOrMoveFile(bucketName, key, newKey);
                 })
                 .then(Mono.just(newFolderName))
                 .onErrorResume(e -> {

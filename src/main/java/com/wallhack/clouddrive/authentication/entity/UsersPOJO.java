@@ -1,11 +1,17 @@
 package com.wallhack.clouddrive.authentication.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 @AllArgsConstructor
@@ -14,7 +20,7 @@ import java.util.Objects;
 @Setter
 @Entity
 @Table(name = "users")
-public class UsersPOJO{
+public class UsersPOJO implements UserDetails {
         @Id
         @GeneratedValue(strategy = GenerationType.SEQUENCE)
         private Long id;
@@ -26,6 +32,7 @@ public class UsersPOJO{
 
         @NotNull
         @NotEmpty
+        @JsonIgnore
         @Column(nullable = false)
         private String password;
 
@@ -50,4 +57,30 @@ public class UsersPOJO{
                         .getHibernateLazyInitializer().getPersistentClass()
                         .hashCode() : this.getClass().hashCode();
         }
+
+        @Override
+        public Collection<? extends GrantedAuthority> getAuthorities() {
+                return List.of();
+        }
+
+        @Override
+        public boolean isAccountNonExpired() {
+                return UserDetails.super.isAccountNonExpired();
+        }
+
+        @Override
+        public boolean isAccountNonLocked() {
+                return UserDetails.super.isAccountNonLocked();
+        }
+
+        @Override
+        public boolean isCredentialsNonExpired() {
+                return UserDetails.super.isCredentialsNonExpired();
+        }
+
+        @Override
+        public boolean isEnabled() {
+                return UserDetails.super.isEnabled();
+        }
+
 }

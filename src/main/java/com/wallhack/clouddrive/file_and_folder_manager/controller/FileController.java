@@ -79,7 +79,7 @@ public class FileController {
     public Mono<ResponseEntity<String>> handleFileRename(@RequestParam("username") String username,
                                                          @RequestParam("fileName") String fileName,
                                                          @RequestParam("newFileName") String newFileName) {
-        return fileService.renameFile(username, fileName, newFileName)
+        return fileService.renameOrMoveFile(username, fileName, newFileName)
                 .map(renameResult -> {
                     if (renameResult.equals(newFileName)){
                         return ResponseEntity.ok("File renamed successfully");

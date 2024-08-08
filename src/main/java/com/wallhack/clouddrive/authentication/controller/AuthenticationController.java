@@ -1,8 +1,9 @@
 package com.wallhack.clouddrive.authentication.controller;
 
 import com.wallhack.clouddrive.authentication.entity.UsersPOJO;
-import com.wallhack.clouddrive.authentication.UserAlreadyExistException;
+import com.wallhack.clouddrive.authentication.repository.exception.UserAlreadyExistException;
 import com.wallhack.clouddrive.authentication.UsersService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.apache.commons.compress.PasswordRequiredException;
@@ -22,29 +23,28 @@ public class AuthenticationController {
     @GetMapping("/sign-up")
     public String registrationGetPage(Model model){
         model.addAttribute("registerRequest", new UsersPOJO());
-        return "registration";
+        return "auth/registration";
     }
 
     @GetMapping("/sign-in")
     public String loginGetPage(Model model){
         model.addAttribute("loginRequest", new UsersPOJO());
-        return "login";
+        return "auth/login";
     }
 
-    @GetMapping("/home")
-    public String home(Model model){
-        model.addAttribute("homeRequest", new UsersPOJO());
-        return "home";
-    }
+//    @GetMapping("/home")
+//    public String home(Model model){
+//        model.addAttribute("homeRequest", new UsersPOJO());
+//        return "home";
+//    }
 
     @PostMapping("/sign-up")
     public String signUp(@ModelAttribute("registerRequest") @Valid UsersPOJO user, BindingResult bindingResult){
         if (bindingResult.hasErrors()) {
-            return "registration";
+            return "auth/registration";
         }
 
         try {
-
             if (usersService.saveUser(user)){
                 return "redirect:/sign-in";
             }
@@ -53,23 +53,21 @@ public class AuthenticationController {
         }catch (IllegalArgumentException iaEx){
             return "redirect:/sign-up?error=2";
         }
-
         return "redirect:/sign-in?error=3";
     }
 
     @PostMapping("/sign-in")
-    public String signIn(@ModelAttribute("loginRequest") @Valid UsersPOJO user, BindingResult bindingResult, Model model) {
-
+    public String signIn(@ModelAttribute("loginRequest") @Valid UsersPOJO user, BindingResult bindingResult, HttpSession session) {
         if (bindingResult.hasErrors()) {
-            return "login";
+            return "auth/login";
         }
 
         try {
             UsersPOJO loginUser = usersService.loginUser(user.getUsername(), user.getPassword());
 
             if (loginUser != null) {
-                model.addAttribute("username", loginUser.getUsername());
-                return "home";
+                session.setAttribute("user", user.getUsername());
+                return "file_test";
             }else throw new UsernameNotFoundException("Invalid username or password");
 
         } catch (UsernameNotFoundException unfEx) {
@@ -82,7 +80,6 @@ public class AuthenticationController {
 
             return "redirect:/sign-in?error=3";
         }
-
     }
 
 }
