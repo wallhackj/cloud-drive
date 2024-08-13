@@ -25,30 +25,27 @@ public class FolderStorageService {
     private final BucketManagerService bucketManager;
     private final FileStorageService fileStorageService;
 
-    public CompletableFuture<Boolean> uploadFolder(String bucketName, List<MultipartFile> files) {
-        return bucketManager.createBucket(bucketName)
-                .thenCompose(bucket -> {
-                    List<CompletableFuture<String>> uploadFutures = new ArrayList<>();
-
-                    files.forEach(file -> {
-                        String key = file.getOriginalFilename();
-                        try (InputStream inputStream = file.getInputStream()) {
-                            FileInfo fileInfo = new FileInfo(key, "", inputStream);
-                            uploadFutures.add(fileStorageService.uploadFile(bucketName, fileInfo));
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-
-                    return CompletableFuture.allOf(uploadFutures.toArray(new CompletableFuture[0]))
-                            .thenApply(v -> true)
-                            .exceptionally(ex -> {
-                                ex.printStackTrace();
-                                return false;
-                            });
+    public Mono<Boolean> uploadFolder(String bucketName, List<MultipartFile> files) {
+        return Mono.fromFuture(() -> bucketManager.createBucket(bucketName))
+                .flatMapMany(bucket -> Flux.fromIterable(files)
+                        .flatMap(file -> {
+                            String key = file.getOriginalFilename();
+                            try {
+                                InputStream inputStream = file.getInputStream();
+                                FileInfo fileInfo = new FileInfo(key, "", inputStream);
+                                return fileStorageService.uploadFile(bucketName, fileInfo);
+                            } catch (IOException e) {
+                                return Mono.error(e);
+                            }
+                        })
+                )
+                .then(Mono.just(true)) // Complete the whole process with a successful boolean
+                .onErrorResume(e -> {
+                    e.printStackTrace();
+                    return Mono.just(false); // Return false in case of error
                 });
-
     }
+
 
     public Mono<byte[]> downloadFolder(String bucketName, String folderName) {
         return listKeysInFolder(bucketName, folderName)
@@ -61,7 +58,7 @@ public class FolderStorageService {
                         return downloadFolder(bucketName, subfolderName).flux(); // Recursively call downloadFolder
                     } else {
                         // If it's a file, download the file and return its data buffer Flux
-                        return Mono.fromFuture(() -> fileStorageService.downloadFile(bucketName, key))
+                        return  fileStorageService.downloadFile(bucketName, key)
                                 .flatMapMany(Flux::from); // Flatten CompletableFuture<Flux<DataBuffer>> to Flux<DataBuffer>
                     }
                 })
@@ -70,7 +67,11 @@ public class FolderStorageService {
                 .flatMap(dataBuffers -> {
                     // List all keys again to get filenames for zipping
                     return listKeysInFolder(bucketName, folderName)
-                            .flatMap(filenames -> ZipDataBuffer.toZipFlux(dataBuffers, filenames)); // Zip data buffers with filenames
+                            .flatMap(filenames -> ZipDataBuffer.toZipFlux(dataBuffers, filenames))// Zip data buffers with filenames
+                            .onErrorResume(e -> {
+                                e.printStackTrace();
+                                return Mono.error(e);
+                            });
                 });
     }
 
@@ -110,7 +111,7 @@ public class FolderStorageService {
                         return deleteFolder(bucketName, subfolderName).flux(); // Recursively call deleteFolder
                     } else {
                         // If it's a file, delete the file
-                        return Mono.fromFuture(() -> fileStorageService.deleteFile(bucketName, key));
+                        return fileStorageService.deleteFile(bucketName, key);
                     }
                 })
                 .then(Mono.just(true))
@@ -126,7 +127,7 @@ public class FolderStorageService {
                 .flatMap(key -> {
                     // Construct the new key for each file
                     String newKey = key.replace(folderName, newFolderName);
-                    return Mono.fromFuture(() -> fileStorageService.renameFile(bucketName, key, newKey));
+                    return fileStorageService.renameOrMoveFile(bucketName, key, newKey);
                 })
                 .then(Mono.just(newFolderName))
                 .onErrorResume(e -> {

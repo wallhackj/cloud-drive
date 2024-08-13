@@ -1,31 +1,33 @@
 package com.wallhack.clouddrive.authentication.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@Entity
+@AllArgsConstructor @NoArgsConstructor
+@Entity @Setter @Getter
 @Table(name = "users")
-public class UsersPOJO{
+public class UsersPOJO implements Serializable {
         @Id
         @GeneratedValue(strategy = GenerationType.SEQUENCE)
         private Long id;
 
         @NotNull
         @NotEmpty
+        @Size(min = 3, max = 50)
         @Column(unique = true, nullable = false)
         private String username;
 
         @NotNull
         @NotEmpty
+        @JsonIgnore
         @Column(nullable = false)
         private String password;
 
@@ -50,4 +52,5 @@ public class UsersPOJO{
                         .getHibernateLazyInitializer().getPersistentClass()
                         .hashCode() : this.getClass().hashCode();
         }
+
 }

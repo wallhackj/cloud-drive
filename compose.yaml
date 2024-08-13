@@ -1,6 +1,7 @@
 version: '3.7'
 
 services:
+
   postgres:
     image: 'postgres:latest'
     environment:
@@ -24,6 +25,15 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio-data:/data
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    environment:
+      REDIS_HOST: localhost
+      REDIS_PASSWORD: session
 
 volumes:
   postgres-data:

@@ -1,9 +1,9 @@
-package com.wallhack.clouddrive.authentication;
+package com.wallhack.clouddrive.authentication.service;
 
 import com.wallhack.clouddrive.authentication.entity.UsersPOJO;
 import com.wallhack.clouddrive.authentication.repository.UsersRepository;
+import com.wallhack.clouddrive.authentication.exception.UserAlreadyExistException;
 import lombok.AllArgsConstructor;
-import org.apache.commons.compress.PasswordRequiredException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,29 +19,16 @@ import static com.wallhack.clouddrive.MyUtils.isStringEmpty;
 public class UsersService {
     private final UsersRepository usersRepository;
 
-    public UsersPOJO loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<UsersPOJO> user = usersRepository.findByUsername(username);
-
-        if (user.isPresent()) {
-            return user.get();
-        }else {
-            throw new UsernameNotFoundException("User not found");
-        }
-    }
-
     public boolean saveUser(UsersPOJO user) throws UserAlreadyExistException, IllegalArgumentException {
         var username = user.getUsername();
         var password = user.getPassword();
 
         if (isStringEmpty(username, password)) {
             throw new IllegalArgumentException("Username and password must not be empty");
-
-        } else if (userExists(username)) {
+        } else if (userExists(username).isPresent()) {
             throw new UserAlreadyExistException("Username already exists");
-
         } else {
             usersRepository.save(user);
-
             return true;
         }
     }
@@ -57,32 +44,16 @@ public class UsersService {
     }
 
     public boolean deleteUser(long id) {
-
         if (usersRepository.findById(id).isPresent()) {
             usersRepository.deleteById(id);
-
             return true;
         }
 
         return false;
     }
 
-    private boolean userExists(String username) {
-        return usersRepository.findByUsername(username).isPresent();
+    public Optional<UsersPOJO> userExists(String username) {
+        return usersRepository.findByUsername(username);
     }
 
-    public UsersPOJO loginUser(String username ,String password) throws UsernameNotFoundException, IllegalArgumentException, PasswordRequiredException {
-
-        if (isStringEmpty(username, password)) {
-            throw new IllegalArgumentException("Username and password must not be empty");
-        }
-
-        UsersPOJO registeredUser = loadUserByUsername(username);
-
-        if (!registeredUser.getPassword().equals(password)) {
-            throw new PasswordRequiredException("Wrong password");
-        }
-
-        return registeredUser;
-    }
 }
