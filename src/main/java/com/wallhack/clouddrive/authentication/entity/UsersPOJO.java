@@ -4,29 +4,24 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.List;
+import java.io.Serializable;
 import java.util.Objects;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@Entity
+@AllArgsConstructor @NoArgsConstructor
+@Entity @Setter @Getter
 @Table(name = "users")
-public class UsersPOJO implements UserDetails {
+public class UsersPOJO implements Serializable {
         @Id
         @GeneratedValue(strategy = GenerationType.SEQUENCE)
         private Long id;
 
         @NotNull
         @NotEmpty
+        @Size(min = 3, max = 50)
         @Column(unique = true, nullable = false)
         private String username;
 
@@ -56,31 +51,6 @@ public class UsersPOJO implements UserDetails {
                 return this instanceof HibernateProxy ? ((HibernateProxy) this)
                         .getHibernateLazyInitializer().getPersistentClass()
                         .hashCode() : this.getClass().hashCode();
-        }
-
-        @Override
-        public Collection<? extends GrantedAuthority> getAuthorities() {
-                return List.of();
-        }
-
-        @Override
-        public boolean isAccountNonExpired() {
-                return UserDetails.super.isAccountNonExpired();
-        }
-
-        @Override
-        public boolean isAccountNonLocked() {
-                return UserDetails.super.isAccountNonLocked();
-        }
-
-        @Override
-        public boolean isCredentialsNonExpired() {
-                return UserDetails.super.isCredentialsNonExpired();
-        }
-
-        @Override
-        public boolean isEnabled() {
-                return UserDetails.super.isEnabled();
         }
 
 }

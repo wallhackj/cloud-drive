@@ -1,6 +1,7 @@
 version: '3.7'
 
 services:
+
   postgres:
     image: 'postgres:latest'
     environment:
@@ -26,19 +27,14 @@ services:
       - minio-data:/data
 
   redis:
-    image: redis:latest
-    restart: always
+    image: redis:alpine
+    container_name: redis
     ports:
-      - "6579:6379"
-    volumes:
-      - /path/to/local/data:/root/redis
-      - /path/to/local/redis.conf:/usr/local/etc/redis/redis.conf
+      - "6379:6379"
     environment:
-      - REDIS_PASSWORD=my-password
-      - REDIS_PORT=6379
-      - REDIS_DATABASES=16
+      REDIS_HOST: localhost
+      REDIS_PASSWORD: session
 
 volumes:
   postgres-data:
   minio-data:
-  redis-data:

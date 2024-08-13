@@ -20,11 +20,6 @@ import java.util.List;
 public class FileController {
     private FileStorageService fileService;
 
-    @GetMapping("/file")
-    public String showUploadForm() {
-        return "file_test";
-    }
-
     //username min 3 ,max 63
 
     @PostMapping("/uploadFile")
