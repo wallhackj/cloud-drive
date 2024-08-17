@@ -2,6 +2,7 @@ package com.wallhack.clouddrive.authentication.service;
 
 import com.wallhack.clouddrive.authentication.dto.AuthDTO;
 import com.wallhack.clouddrive.authentication.entity.UsersPOJO;
+import com.wallhack.clouddrive.authentication.exception.UserAlreadyExistException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Setter;
@@ -26,7 +27,6 @@ import java.util.Optional;
 
 @Service @Setter
 public class AuthService {
-
     @Value(value = "${custom.max.session}")
     private int maxSession;
     private final UsersService usersService;
@@ -55,26 +55,28 @@ public class AuthService {
     }
 
     public String register(AuthDTO dto) {
-        String username = dto.username();
-
+        var username = dto.getUsername();
         Optional<UsersPOJO> exists = usersService.userExists(username);
 
         if (exists.isPresent()) {
-            throw new IllegalStateException(username + " exists");
+            throw new UserAlreadyExistException(username + " exists");
         }
 
         UsersPOJO user = new UsersPOJO();
         user.setUsername(username);
-        user.setPassword(passwordEncoder.encode(dto.password()));
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
 
-        usersService.saveUser(user);
-        return "auth/login";
+        if (usersService.saveUser(user)) {
+            return "login";
+        } else {
+            return "register";
+        }
     }
 
     public String login(AuthDTO dto, HttpServletRequest request, HttpServletResponse response) {
         // Validate User credentials
         Authentication authentication = authManager.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(
-                dto.username(), dto.password()));
+                dto.getUsername(), dto.getPassword()));
 
         // Validate session constraint is not exceeded
         validateMaxSession(authentication);

@@ -14,21 +14,20 @@
     <hr>
     <h2>Login</h2>
 
-    <div th:if="${error != null}" class="alert alert-danger">
-        <span th:text="'Error: ' + ${error}"></span>
-    </div>
-
-    <form th:action="@{/sign-in}" th:object="${AuthDTO}" method="POST">
+    <form th:action="@{/sign-in}" th:object="${authDTO}" method="POST">
+        <div th:if="${error}" class="error">
+            <p th:text="${error}"></p>
+        </div>
         <div class="form-group">
             <label for="username">Username</label>
             <input type="text" th:field="*{username}" placeholder="Username"
-                   class="form-control mb-4 col-4" id="username">
+                   class="form-control mb-4 col-4" id="username" required>
         </div>
 
         <div class="form-group">
             <label for="password">Password</label>
             <input type="password" th:field="*{password}" placeholder="Password"
-                   class="form-control mb-4 col-4" id="password">
+                   class="form-control mb-4 col-4" id="password" required>
         </div>
 
         <button type="submit" class="btn btn-info col-2">Sign In</button>
