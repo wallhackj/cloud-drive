@@ -42,27 +42,28 @@ class AuthControllerTest {
     AuthService authService;
 
     @Container
-    private static final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>(DockerImageName
+    private static final PostgreSQLContainer<?> POSTGRE_SQL_CONTAINER = new PostgreSQLContainer<>(DockerImageName
             .parse("postgres:latest"));
+
     @Container
-    private static final RedisContainer redisContainer = new RedisContainer(DockerImageName
+    private static final RedisContainer REDIS_CONTAINER = new RedisContainer(DockerImageName
             .parse("redis:alpine"))
             .withExposedPorts(6379);
 
     @DynamicPropertySource
     static void configureProperties(@NotNull DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
-        registry.add("spring.datasource.username", postgreSQLContainer::getUsername);
-        registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
+        registry.add("spring.datasource.url", POSTGRE_SQL_CONTAINER::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRE_SQL_CONTAINER::getUsername);
+        registry.add("spring.datasource.password", POSTGRE_SQL_CONTAINER::getPassword);
 
-        registry.add("spring.redis.host", redisContainer::getHost);
-        registry.add("spring.redis.port", () -> redisContainer.getMappedPort(6379).toString());
+        registry.add("spring.redis.host", REDIS_CONTAINER::getHost);
+        registry.add("spring.redis.port", () -> REDIS_CONTAINER.getMappedPort(6379).toString());
     }
 
     @BeforeEach
     @Test
     void givenRedisContainerConfiguredWithDynamicProperties_whenCheckingRunningStatus_thenStatusIsRunning() {
-        assertTrue(redisContainer.isRunning());
+        assertTrue(REDIS_CONTAINER.isRunning());
     }
 
     @Test
