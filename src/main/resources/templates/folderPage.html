@@ -1,175 +1,150 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>Manage Folder</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 50px;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        h1 {
-            text-align: center;
-        }
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        input[type="text"] {
-            padding: 10px;
-            font-size: 16px;
-        }
-        button {
-            padding: 10px;
-            font-size: 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .error {
-            color: red;
-            text-align: center;
-        }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>File Storage</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
+    <link th:href="@{/css/list-groups.css}" rel="stylesheet">
 </head>
+
 <body>
-<div class="container">
-    <h1>Manage Folder</h1>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-u1OknCvxWvY5kfmNBILK2hRnQC3Pr17a+RTT6rIHI7NnikvbZlHgTPOOmMi466C8"
+        crossorigin="anonymous"></script>
+<div th:insert="auth/header :: authorization_bar"></div>
+<div class="container-md">
 
-    <!-- Form for Downloading Folder -->
-    <form id="downloadForm">
-        <label for="bucketName">Bucket Name:</label>
-        <input type="text" id="bucketName" name="bucketName" required>
+    <!-- BreadCrumbs -->
+    <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item" th:each="breadCrumb : ${breadCrumbs}">
+                <a th:href="${breadCrumb.url}" th:unless="${breadCrumb.isCurrent}"
+                   th:text="${breadCrumb.name}">Home</a>
+                <span class="breadcrumb-item active" th:if="${breadCrumb.isCurrent}"
+                      th:text="${breadCrumb.name}">Home</span>
+        </ol>
+    </nav>
 
-        <label for="folderName">Folder Name:</label>
-        <input type="text" id="folderName" name="folderName" required>
+    <!-- Search file or directory -->
+    <div class="row justify-content-md-center mt-4">
+        <div class="col-6 text-center">
+            <form class="input-group mb-3" th:action="@{/search}" method="GET">
+                <input type="text" class="form-control" placeholder="Enter file or directory name"
+                       aria-describedby="button-addon2" th:value="${query}" name="query">
+                <button class="btn btn-warning btn-lg" type="submit" id="button-addon2">Search</button>
+            </form>
+        </div>
+    </div>
 
-        <button type="submit">Download</button>
-    </form>
+    <!-- Upload file -->
+    <div class="row justify-content-center mt-2">
+        <div class="col-auto">
+            <h3>Upload file or directory</h3>
+        </div>
+    </div>
+    <div class="row justify-content-md-center">
+        <div class="col-6 text-center">
+            <form th:action="@{/upload-file}" th:object="${fileDTO}"
+                  enctype="multipart/form-data"
+                  method="post" id="1">
+                <div class="input-group mt-4">
+                    <input type="hidden" th:field="*{path}" id="path">
+                    <input type="file" th:field="*{file}" class="form-control" id="inputGroupFile01"
+                           aria-describedby="inputGroupFileAddon01" aria-label="Upload" required/>
+                    <button class="btn btn-outline-success" type="submit" id="inputGroupFileAddon01">Upload file
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    <!-- Form for Deleting Folder -->
-    <form id="deleteForm">
-        <label for="deleteBucketName">Bucket Name:</label>
-        <input type="text" id="deleteBucketName" name="bucketName" required>
+    <!-- Upload directory-->
+    <div class="row justify-content-md-center">
+        <div class="col-6 text-center">
+            <form class="input-group mt-4" th:action="@{/upload-directory}" th:object="${directoryDTO}"
+                  enctype="multipart/form-data"
+                  method="post" id="2">
+                <input type="hidden" th:field="*{path}">
+                <input type="file" th:field="*{files}" class="form-control"
+                       aria-describedby="inputGroupFileAddon02" aria-label="Upload" webkitdirectory directory multiple
+                       required/>
+                <button class="btn btn-outline-success" type="submit">Upload directory</button>
+            </form>
+        </div>
+    </div>
 
-        <label for="deleteFolderName">Folder Name:</label>
-        <input type="text" id="deleteFolderName" name="folderName" required>
+    <!-- List of files and directories -->
+    <div class="row justify-content-center">
+        <div class="col-auto mt-5">
+            <h3>File Storage</h3>
+        </div>
+    </div>
 
-        <button type="submit">Delete</button>
-    </form>
+    <ul class="list-group">
+        <li th:each="file : ${listFiles}" th:object="${file}"
+            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <a style="text-decoration: none" th:href="*{url}" th:text="*{displayName}">Name</a>
 
-    <!-- Form for Renaming Folder -->
-    <form id="renameForm">
-        <label for="renameBucketName">Bucket Name:</label>
-        <input type="text" id="renameBucketName" name="bucketName" required>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    . . .
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <button type="submit" class="dropdown-item" data-bs-toggle="modal"
+                                th:attr="data-bs-target=${'#renameModal'+file.idOnPage}">
+                            Rename
+                        </button>
+                    </li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <form th:action="@{/remove}" th:method="DELETE">
+                        <li>
+                            <input type="hidden" th:value="*{objectName}" name="objectName"/>
 
-        <label for="renameFolderName">Current Folder Name:</label>
-        <input type="text" id="renameFolderName" name="folderName" required>
+                            <button type="submit" class="dropdown-item">Delete</button>
+                        </li>
+                    </form>
+                </ul>
+            </div>
+        </li>
+    </ul>
 
-        <label for="newFolderName">New Folder Name:</label>
-        <input type="text" id="newFolderName" name="newFolderName" required>
+    <!-- Rename Modal -->
+    <div th:each="file : ${listFiles}" th:object="${file}">
+        <div class="modal fade" th:attr="id=${'renameModal'+ file.idOnPage}" tabindex="-1"
+             aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Rename file/directory</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form th:action="@{/rename}" th:method="PATCH">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="displayName" class="col-form-label">Enter new name:</label>
+                                <input type="text" th:value="*{displayName}" class="form-control"
+                                       id="displayName" name="displayName">
+                                <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+                                <script type="text/javascript" th:src="@{/js/main.js}"></script>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <input type="hidden" th:value="*{objectName}" name="objectName"/>
+                            <button type="submit" class="btn btn-primary">Save changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <button type="submit">Rename</button>
-    </form>
-
-    <div id="statusMessage" class="error"></div>
 </div>
-
-<script>
-    document.getElementById('downloadForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        const bucketName = document.getElementById('bucketName').value;
-        const folderName = document.getElementById('folderName').value;
-
-        const url = new URL('http://localhost:8081/downloadFolder');
-        url.searchParams.append('bucketName', bucketName);
-        url.searchParams.append('folderName', folderName);
-
-        fetch(url)
-            .then(response => {
-                if (response.ok) {
-                    return response.blob();
-                } else {
-                    throw new Error('Failed to download folder');
-                }
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = folderName + '.zip';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('statusMessage').innerText = 'Failed to download folder';
-            });
-    });
-
-    document.getElementById('deleteForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        const bucketName = document.getElementById('deleteBucketName').value;
-        const folderName = document.getElementById('deleteFolderName').value;
-
-        const url = new URL('http://localhost:8081/deleteFolder');
-        url.searchParams.append('bucketName', bucketName);
-        url.searchParams.append('folderName', folderName);
-
-        fetch(url, { method: 'DELETE' })
-            .then(response => response.json())
-            .then(result => {
-                if (result) {
-                    alert('Folder deleted successfully');
-                } else {
-                    throw new Error('Failed to delete folder');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('statusMessage').innerText = 'Failed to delete folder';
-            });
-    });
-
-    document.getElementById('renameForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        const bucketName = document.getElementById('renameBucketName').value;
-        const folderName = document.getElementById('renameFolderName').value;
-        const newFolderName = document.getElementById('newFolderName').value;
-
-        const url = new URL('http://localhost:8081/renameFolder');
-        url.searchParams.append('bucketName', bucketName);
-        url.searchParams.append('folderName', folderName);
-        url.searchParams.append('newFolderName', newFolderName);
-
-        fetch(url, { method: 'PUT' })
-            .then(response => response.json())
-            .then(result => {
-                if (result) {
-                    alert('Folder renamed successfully');
-                } else {
-                    throw new Error('Failed to rename folder');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('statusMessage').innerText = 'Failed to rename folder';
-            });
-    });
-</script>
 </body>
 </html>
