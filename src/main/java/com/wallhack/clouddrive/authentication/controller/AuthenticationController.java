@@ -19,6 +19,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 public class AuthenticationController {
     private final AuthService authService;
 
+    @GetMapping("/")
+    public String index() {
+        return "mainPage";
+    }
+
     @GetMapping("/sign-up")
     public String showRegistrationPage(Model model) {
         model.addAttribute("authDTO", new AuthDTO("", ""));

@@ -61,21 +61,19 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/",
-                            "/sign-in",
-                            "/sign-up").permitAll();
+                    auth.requestMatchers("/", "/sign-in","/sign-up", "/style.css", "/image/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(sessionManagement -> sessionManagement
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) //
-                        .sessionFixation(SessionManagementConfigurer.SessionFixationConfigurer::newSession) //
-                        .maximumSessions(maxSession) //
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        .sessionFixation(SessionManagementConfigurer.SessionFixationConfigurer::newSession)
+                        .maximumSessions(maxSession)
                         .sessionRegistry(sessionRegistry())
                 )
-                .exceptionHandling((ex) -> ex.authenticationEntryPoint(this.authEntryPoint))
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(this.authEntryPoint))
                 .logout(out -> out
                         .logoutUrl("/logout")
-                        .invalidateHttpSession(true) // Invalidate all sessions after logout
+                        .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                         .addLogoutHandler(new CustomLogoutHandler(this.redisIndexedSessionRepository))
                         .logoutSuccessHandler((request, response, authentication) ->
@@ -84,6 +82,7 @@ public class SecurityConfig {
                 )
                 .build();
     }
+
 
     @Bean
     public SpringSessionBackedSessionRegistry<? extends Session> sessionRegistry() {
