@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Cloud Drive</title>
+</head>
+
+<body>
+<!-- Loader -->
+<div class="loader-wrapper">
+    <div class="loader"></div>
+</div>
+<!-- End Loader -->
+
+<!-- Navigation Bar -->
+<header class="navbar">
+    <div class="container">
+        <div class="nav-buttons">
+            <button class="nav-button" onclick="window.location.href='/sign-in'">Sign In</button>
+            <button class="nav-button" onclick="window.location.href='/sign-up'">Sign Up</button>
+        </div>
+    </div>
+</header>
+<!-- End Navigation Bar -->
+
+<!-- Main Banner -->
+<section class="main-banner" id="home">
+    <div class="container">
+        <div class="banner-content">
+            <div class="text-content">
+                <h1>Cloud Drive</h1>
+                <p>Start your cloud journey with us.</p>
+                <button class="cta-button">Get Started</button>
+            </div>
+            <div class="image-content">
+                <img src="/image/CLOUD.jpg" alt="FileSync Cloud Storage Image" class="floating">
+            </div>
+        </div>
+    </div>
+</section>
+<!-- End Main Banner -->
+
+<!-- Script for hiding the loader -->
+<script>
+    window.addEventListener("load", function () {
+        const loaderWrapper = document.querySelector(".loader-wrapper");
+        loaderWrapper.style.display = "none";
+    }, true);
+</script>
+</body>
+
+</html>

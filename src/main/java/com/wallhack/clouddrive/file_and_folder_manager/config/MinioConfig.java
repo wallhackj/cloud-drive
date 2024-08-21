@@ -14,7 +14,6 @@ import java.net.URI;
 
 @Configuration
 public class MinioConfig {
-
     @Value("${minio.access.url}")
     private String minioUrl;
 

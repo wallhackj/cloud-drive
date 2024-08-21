@@ -19,7 +19,7 @@ public class FolderController {
 
     @GetMapping("/folderPage")
     public String folderPage() {
-        return "folderPage";
+        return "mainPage";
     }
 
     @PostMapping("/uploadDirectory")

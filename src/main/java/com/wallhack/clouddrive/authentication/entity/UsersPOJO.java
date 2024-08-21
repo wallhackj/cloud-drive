@@ -52,5 +52,4 @@ public class UsersPOJO implements Serializable {
                         .getHibernateLazyInitializer().getPersistentClass()
                         .hashCode() : this.getClass().hashCode();
         }
-
 }
