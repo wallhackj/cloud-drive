@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <title>Cloud Drive</title>
+</head>
+
+<body>
+<!-- Loader -->
+<div class="loader-wrapper">
+    <div class="loader"></div>
+</div>
+<!-- End Loader -->
+
+<!-- Navigation Bar -->
+<header class="navbar">
+    <div class="container">
+        <div class="nav-buttons">
+            <!-- Button to trigger file selection and upload -->
+            <button class="nav-button" onclick="triggerFileUpload()">Upload File</button>
+            <button class="nav-button" onclick="triggerFolderUpload()">Upload Folder</button>
+            <button class="nav-button" onclick="window.location.href='/logout'">Logout</button>
+        </div>
+    </div>
+</header>
+<!-- End Navigation Bar -->
+
+<!-- Main Banner -->
+<section class="main-banner" id="home">
+    <div class="container">
+        <div class="banner-content">
+            <!-- File List Table -->
+            <table id="fileTable">
+                <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Last Modified</th>
+                </tr>
+                </thead>
+                <tbody id="fileTableBody">
+                <!-- Rows will be generated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+<!-- End Main Banner -->
+
+<!-- Hidden File Input -->
+<input type="file" id="hiddenFileInput" style="display: none;" onchange="handleFileChange(event)">
+<input type="file" id="hiddenFolderInput" style="display: none;" webkitdirectory directory onchange="handleFolderChange(event)">
+
+<!-- Script pentru încărcarea și afișarea fișierelor -->
+<script>
+    window.addEventListener("load", function () {
+        const loaderWrapper = document.querySelector(".loader-wrapper");
+        loaderWrapper.style.display = "none";
+        fetchFileList(); // Fetch file list on page load
+    }, true);
+
+    // Function to trigger the file input click
+    function triggerFileUpload() {
+        document.getElementById('hiddenFileInput').click();
+    }
+
+    function triggerFolderUpload() {
+        document.getElementById('hiddenFolderInput').click();
+    }
+
+    // Function to handle file input change
+    function handleFileChange(event) {
+        const fileInput = event.target;
+        if (fileInput.files.length > 0) {
+            const formData = new FormData();
+            const username = document.getElementById('upload-username') ? document.getElementById('upload-username').value : '';
+
+            formData.append('username', username);
+            formData.append('file', fileInput.files[0]);
+
+            // Submit the file via fetch
+            fetch('/uploadFile', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('File uploaded successfully!');
+                        fetchFileList(); // Refresh the file list after uploading
+                    } else {
+                        alert('Failed to upload file.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error uploading file:', error);
+                    alert('Error uploading file.');
+                });
+        }
+    }
+
+    function handleFolderChange(event) {
+        const folderInput = event.target;
+        if (folderInput.files.length > 0) {
+            const formData = new FormData();
+            const username = document.getElementById('upload-username') ? document.getElementById('upload-username').value : '';
+
+            formData.append('bucketName', username); // Assume bucket name is same as username for simplicity
+            Array.from(folderInput.files).forEach(file => {
+                formData.append('directory', file);
+            });
+
+            // Submit the folder files via fetch
+            fetch('/uploadDirectory', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Folder uploaded successfully!');
+                        fetchFileList(); // Refresh the file list after uploading
+                    } else {
+                        alert('Failed to upload folder.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error uploading folder:', error);
+                    alert('Error uploading folder.');
+                });
+        }
+    }
+
+    // Function to fetch and display the list of files
+    async function fetchFileList() {
+        try {
+            const username = await fetchString('/username');
+            const response = await fetch(`/listFiles?username=${encodeURIComponent(username)}`);
+            if (response.ok) {
+                const files = await response.json();
+                populateFileTable(files);
+            } else {
+                console.error('Failed to fetch file list.');
+            }
+        } catch (error) {
+            console.error('Error fetching file list:', error);
+        }
+    }
+
+    // Function to populate the file table with data
+    function populateFileTable(files) {
+        const tableBody = document.getElementById('fileTableBody');
+        tableBody.innerHTML = ''; // Clear existing table rows
+
+        files.forEach(file => {
+            const row = document.createElement('tr');
+
+            const fileNameCell = document.createElement('td');
+            fileNameCell.textContent = file.key;
+            row.appendChild(fileNameCell);
+
+            const lastModifiedCell = document.createElement('td');
+            lastModifiedCell.textContent = file.lastModified;
+            row.appendChild(lastModifiedCell);
+
+            tableBody.appendChild(row);
+        });
+    }
+
+    // Function to get the username
+    async function fetchString(url) {
+        try {
+            const response = await fetch(url);
+            if (response.ok) {
+                return await response.text();
+            }
+        } catch (error) {
+            console.error('Error fetching string:', error);
+            throw error;
+        }
+    }
+
+    // Pre-fill username field with fetched username
+    async function preFillUsername() {
+        try {
+            const username = await fetchString('/username');
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.id = 'upload-username';
+            input.value = username;
+            document.body.appendChild(input);
+        } catch (error) {
+            console.error('Error fetching username:', error);
+        }
+    }
+
+    // Show the form and pre-fill username when the page loads
+    window.addEventListener("load", preFillUsername);
+</script>
+
+<!-- Styles for Modal (if needed) -->
+<style>
+    .loader-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(255, 255, 255, 0.8);
+        z-index: 1000;
+    }
+
+    .loader {
+        border: 16px solid #f3f3f3;
+        border-radius: 50%;
+        border-top: 16px solid #3498db;
+        width: 120px;
+        height: 120px;
+        -webkit-animation: spin 2s linear infinite; /* Safari */
+        animation: spin 2s linear infinite;
+    }
+
+    /* Safari */
+    @-webkit-keyframes spin {
+        0% { -webkit-transform: rotate(0deg); }
+        100% { -webkit-transform: rotate(360deg); }
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Table Styles */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th, td {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        text-align: left;
+        color: black; /* Set text color to black */
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+</style>
+
+</body>
+
+</html>

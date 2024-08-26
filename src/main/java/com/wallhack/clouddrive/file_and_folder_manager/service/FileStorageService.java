@@ -40,7 +40,8 @@ public class FileStorageService {
                 .build();
 
         try {
-            return Mono.fromFuture(() -> client.putObject(putRequest, AsyncRequestBody.fromPublisher(toFlux(file.file()))))
+            return Mono.fromFuture(() -> bucketManager.createBucket(bucketName)
+                    .thenCompose(v -> client.putObject(putRequest, AsyncRequestBody.fromPublisher(toFlux(file.file())))))
                     .then(Mono.just(true))
                     .onErrorResume(e -> {
                         e.printStackTrace();
