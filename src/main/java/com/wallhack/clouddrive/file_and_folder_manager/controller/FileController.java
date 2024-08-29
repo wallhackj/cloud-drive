@@ -5,7 +5,9 @@ import com.wallhack.clouddrive.file_and_folder_manager.service.FileStorageServic
 import lombok.AllArgsConstructor;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.http.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,7 +26,7 @@ public class FileController {
 
     @PostMapping("/uploadFile")
     public Mono<ResponseEntity<String>> handleFileUpload(@RequestParam("username") String username,
-                                                         @RequestParam("file") MultipartFile file){
+                                                         @RequestParam("file") MultipartFile file) {
         FileInfo fileInfo;
         try {
             fileInfo = new FileInfo(file.getOriginalFilename(),
@@ -54,8 +56,6 @@ public class FileController {
                 });
     }
 
-
-
     @DeleteMapping("/deleteFile")
     public Mono<ResponseEntity<String>> handleFileDelete(@RequestParam("username") String username,
                                                          @RequestParam("fileName") String fileName) {
@@ -76,9 +76,9 @@ public class FileController {
                                                          @RequestParam("newFileName") String newFileName) {
         return fileService.renameOrMoveFile(username, fileName, newFileName)
                 .map(renameResult -> {
-                    if (renameResult.equals(newFileName)){
+                    if (renameResult.equals(newFileName)) {
                         return ResponseEntity.ok("File renamed successfully");
-                    }else return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
+                    } else return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
                 })
                 .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }

@@ -57,7 +57,8 @@ function commander(cmd) {
             setTimeout(handlerRemoveing(cmd.toLowerCase().split(' ')[1]), 80);
             break;
         case "wget":
-
+            setTimeout(handlerDownload(cmd.toLowerCase().split(' ')[1]), 80);
+            break;
         case "uploadfolder":
 
         case "find":
@@ -113,6 +114,52 @@ function commander(cmd) {
             break;
     }
 }
+
+async function handlerDownload(name) {
+    try {
+        let url;
+        if (name.includes('.')) {
+            // For files
+            url = `/downloadFile?username=${encodeURIComponent(whoami)}&fileName=${encodeURIComponent(name)}`;
+        } else {
+            // For folders
+            url = `/downloadFolder?username=${encodeURIComponent(whoami)}&folderName=${encodeURIComponent(name)}`;
+        }
+
+        const response = await fetch(url, {
+            method: 'GET'
+        });
+
+        if (response.ok) {
+            const contentDisposition = response.headers.get('Content-Disposition');
+            const fileName = contentDisposition
+                ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+                : 'download';
+
+            // Create a Blob from the response
+            const blob = await response.blob();
+            // Create a link element
+            const link = document.createElement('a');
+            // Set the href to a URL created from the Blob
+            link.href = window.URL.createObjectURL(blob);
+            link.download = fileName;
+            // Append the link to the document
+            document.body.appendChild(link);
+            // Programmatically click the link to trigger the download
+            link.click();
+            // Remove the link from the document
+            link.remove();
+
+            addLine("Download initiated!", "color2", 0);
+        } else {
+            addLine("Something went wrong with the download!", "color2", 0);
+        }
+    } catch (error) {
+        addLine("Error handling download.", "color2", 0);
+        console.error('Error handling download:', error);
+    }
+}
+
 
 async function handlerRemoveing(name) {
     try {

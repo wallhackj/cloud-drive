@@ -23,18 +23,18 @@ public class FolderController {
     }
 
     @PostMapping("/uploadDirectory")
-    public Mono<ResponseEntity<Boolean>> handlerUploadFolder(@RequestParam("username") String bucketName,
+    public Mono<ResponseEntity<Boolean>> handlerUploadFolder(@RequestParam("username") String username,
                                                             @RequestParam("directory") List<MultipartFile> files) {
-        return folderStorageService.uploadFolder(bucketName, files)
+        return folderStorageService.uploadFolder(username, files)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
 
 
     @GetMapping("/downloadFolder")
-    public Mono<ResponseEntity<byte[]>> handleFolderDownload(@RequestParam("username") String bucketName,
+    public Mono<ResponseEntity<byte[]>> handleFolderDownload(@RequestParam("username") String username,
                                                              @RequestParam("folderName") String folderName) {
-        return folderStorageService.downloadFolder(bucketName, folderName)
+        return folderStorageService.downloadFolder(username, folderName)
                 .map(zipBytes -> ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + folderName + ".zip\"")
                         .body(zipBytes))
@@ -42,18 +42,18 @@ public class FolderController {
     }
 
     @DeleteMapping("/deleteFolder")
-    public Mono<ResponseEntity<Boolean>> handlerFolderDeleting(@RequestParam("username") String bucketName,
+    public Mono<ResponseEntity<Boolean>> handlerFolderDeleting(@RequestParam("username") String username,
                                                                @RequestParam("folderName") String folderName) {
-        return folderStorageService.deleteFolder(bucketName, folderName)
+        return folderStorageService.deleteFolder(username, folderName)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
 
     @PutMapping("/renameFolder")
-    public Mono<ResponseEntity<String>> handlerFolderRename(@RequestParam("username") String bucketName,
+    public Mono<ResponseEntity<String>> handlerFolderRename(@RequestParam("username") String username,
                                                             @RequestParam("folderName") String folderName,
                                                             @RequestParam("newFolderName") String newFolderName) {
-        return folderStorageService.renameFolder(bucketName, folderName, newFolderName)
+        return folderStorageService.renameFolder(username, folderName, newFolderName)
                 .map(ResponseEntity::ok)
                 .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
