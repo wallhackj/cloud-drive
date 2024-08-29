@@ -73,7 +73,7 @@ public class AuthenticationController {
             var isAuthenticated = authService.login(authDTO, request, response);
 
             if (isAuthenticated.equals("file")) {
-                return "test";
+                return "index";
             }
 
         }catch (BadCredentialsException bcEx) {

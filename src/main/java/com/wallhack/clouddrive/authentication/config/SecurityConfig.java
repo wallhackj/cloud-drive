@@ -61,7 +61,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/", "/sign-in","/sign-up", "/style.css", "/image/**", "/username").permitAll();
+                    auth.requestMatchers("/", "/sign-in","/sign-up", "/css/**", "/image/**","/js/**", "/username").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(sessionManagement -> sessionManagement
