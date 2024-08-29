@@ -23,7 +23,7 @@ public class FolderController {
     }
 
     @PostMapping("/uploadDirectory")
-    public Mono<ResponseEntity<Boolean>> handlerUploadFolder(@RequestParam("bucketName") String bucketName,
+    public Mono<ResponseEntity<Boolean>> handlerUploadFolder(@RequestParam("username") String bucketName,
                                                             @RequestParam("directory") List<MultipartFile> files) {
         return folderStorageService.uploadFolder(bucketName, files)
                 .map(ResponseEntity::ok)
@@ -32,7 +32,7 @@ public class FolderController {
 
 
     @GetMapping("/downloadFolder")
-    public Mono<ResponseEntity<byte[]>> handleFolderDownload(@RequestParam("bucketName") String bucketName,
+    public Mono<ResponseEntity<byte[]>> handleFolderDownload(@RequestParam("username") String bucketName,
                                                              @RequestParam("folderName") String folderName) {
         return folderStorageService.downloadFolder(bucketName, folderName)
                 .map(zipBytes -> ResponseEntity.ok()
@@ -42,7 +42,7 @@ public class FolderController {
     }
 
     @DeleteMapping("/deleteFolder")
-    public Mono<ResponseEntity<Boolean>> handlerFolderDeleting(@RequestParam("bucketName") String bucketName,
+    public Mono<ResponseEntity<Boolean>> handlerFolderDeleting(@RequestParam("username") String bucketName,
                                                                @RequestParam("folderName") String folderName) {
         return folderStorageService.deleteFolder(bucketName, folderName)
                 .map(ResponseEntity::ok)
@@ -50,7 +50,7 @@ public class FolderController {
     }
 
     @PutMapping("/renameFolder")
-    public Mono<ResponseEntity<String>> handlerFolderRename(@RequestParam("bucketName") String bucketName,
+    public Mono<ResponseEntity<String>> handlerFolderRename(@RequestParam("username") String bucketName,
                                                             @RequestParam("folderName") String folderName,
                                                             @RequestParam("newFolderName") String newFolderName) {
         return folderStorageService.renameFolder(bucketName, folderName, newFolderName)

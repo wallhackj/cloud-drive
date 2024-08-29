@@ -76,9 +76,13 @@ public class SecurityConfig {
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                         .addLogoutHandler(new CustomLogoutHandler(this.redisIndexedSessionRepository))
-                        .logoutSuccessHandler((request, response, authentication) ->
-                                SecurityContextHolder.clearContext()
+                        .logoutSuccessUrl("/sign-in")
+                        .logoutSuccessHandler((request, response, authentication) ->{
+                                    SecurityContextHolder.clearContext();
+                                    response.sendRedirect("/");
+                                }
                         )
+
                 )
                 .build();
     }

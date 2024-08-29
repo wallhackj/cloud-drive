@@ -26,7 +26,7 @@ function enterKey(e) {
         if (e.keyCode === 13) {
             commands.push(command.innerHTML);
             git = commands.length;
-            addLine("visitor@fkcodes.com:~$ " + command.innerHTML, "no-animation", 0);
+            addLine("user@terminal.com:~$ " + command.innerHTML, "no-animation", 0);
             commander(command.innerHTML.toLowerCase());
             command.innerHTML = "";
             textarea.value = "";
@@ -48,7 +48,25 @@ function enterKey(e) {
 }
 
 function commander(cmd) {
-    switch (cmd.toLowerCase()) {
+    switch (cmd.toLowerCase().split(' ')[0]) {
+        case "mv":
+            setTimeout(handlerRenMov(cmd.toLowerCase().split(' ')[1],
+                cmd.toLowerCase().split(' ')[2]), 80);
+            break;
+        case "rm":
+            setTimeout(handlerRemoveing(cmd.toLowerCase().split(' ')[1]), 80);
+            break;
+        case "wget":
+
+        case "uploadfolder":
+
+        case "find":
+
+        case "uploadfile":
+
+        case "ls":
+            loopLines(list, "color2 margin", 80)
+            break;
         case "help":
             loopLines(help, "color2 margin", 80);
             break;
@@ -69,9 +87,8 @@ function commander(cmd) {
             loopLines(commands, "color2", 80);
             addLine("<br>", "command", 80 * commands.length + 50);
             break;
-        case "email":
-            addLine('Opening mailto:<a href="mailto:victorhaideu@gmail.com">victorhaideu@gmail.com</a>...', "color2", 80);
-            newTab(email);
+        case "logout":
+            window.location.href='/logout';
             break;
         case "clear":
             setTimeout(function() {
@@ -94,6 +111,64 @@ function commander(cmd) {
         default:
             addLine("<span class=\"inherit\">Command not found. For a list of commands, type <span class=\"command\">'help'</span>.</span>", "error", 100);
             break;
+    }
+}
+
+async function handlerRemoveing(name) {
+    try {
+        if (name.includes('.')) {
+            const response = await fetch(`/deleteFile?username=${encodeURIComponent(whoami)}&fileName=${encodeURIComponent(name)}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                addLine("Probably deleted. Reloading was our last-ditch effort to resurrect it. Spoiler: It didn’t work, but we tried!", "color2", 0);
+            } else {
+                addLine("Something went wrong!", "color2", 0);
+            }
+        } else {
+            const response = await fetch(`/deleteFolder?username=${encodeURIComponent(whoami)}&folderName=${encodeURIComponent(name)}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                addLine("Probably deleted. Reloading was our last-ditch effort to resurrect it. Spoiler: It didn’t work, but we tried!", "color2", 0);
+            } else {
+                addLine("Something went wrong!", "color2", 0);
+            }
+        }
+    } catch (error) {
+        addLine("Error handling deleting.", "color2", 0);
+        console.error('Error handling rename or move:', error);
+    }
+}
+
+async function handlerRenMov(from, to) {
+    try {
+        if (from.includes('.')) {
+            const response = await fetch(`/renameFile?username=${encodeURIComponent(whoami)}&fileName=${encodeURIComponent(from)}&newFileName=${encodeURIComponent(to)}`, {
+                method: 'PUT'
+            });
+
+            if (response.ok) {
+                addLine("Ok? Maybe reload page.", "color2", 0);
+            } else {
+                addLine("Something went wrong!", "color2", 0);
+            }
+        } else {
+            const response = await fetch(`/renameFolder?username=${encodeURIComponent(whoami)}&folderName=${encodeURIComponent(from)}&newFolderName=${encodeURIComponent(to)}`, {
+                method: 'PUT'
+            });
+
+            if (response.ok) {
+                addLine("Ok? Maybe reload page.", "color2", 0);
+            } else {
+                addLine("Something went wrong!", "color2", 0);
+            }
+        }
+    } catch (error) {
+        addLine("Error handling rename or move.", "color2", 0);
+        console.error('Error handling rename or move:', error);
     }
 }
 
