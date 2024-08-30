@@ -61,7 +61,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/", "/sign-in","/sign-up", "/style.css", "/image/**").permitAll();
+                    auth.requestMatchers("/", "/sign-in","/sign-up", "/static/**","/username").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(sessionManagement -> sessionManagement
@@ -76,13 +76,16 @@ public class SecurityConfig {
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                         .addLogoutHandler(new CustomLogoutHandler(this.redisIndexedSessionRepository))
-                        .logoutSuccessHandler((request, response, authentication) ->
-                                SecurityContextHolder.clearContext()
+                        .logoutSuccessUrl("/sign-in")
+                        .logoutSuccessHandler((request, response, authentication) ->{
+                                    SecurityContextHolder.clearContext();
+                                    response.sendRedirect("/");
+                                }
                         )
+
                 )
                 .build();
     }
-
 
     @Bean
     public SpringSessionBackedSessionRegistry<? extends Session> sessionRegistry() {

@@ -1,55 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/style.css">
-    <title>Cloud Drive</title>
+    <title>ASCII Art Sign Up/Sign In</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            color: #519975;
+            background-color: #211D1B;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        .ascii-art {
+            white-space: pre;
+            color: #519975;
+            font-size: 1em;
+            margin-bottom: 20px;
+            display: none; /* Initial hidden to show the typing effect */
+        }
+
+        button {
+            width: 100px;
+            padding: 10px;
+            background-color: #73ABAD;
+            border: none;
+            color: #211D1B;
+            border-radius: 3px;
+            font-size: 1em;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            text-shadow: 0 0 5px #73ABAD;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #B89076;
+            color: #211D1B;
+        }
+
+        a {
+            color: #9C8394;
+            text-decoration: inherit;
+        }
+
+        a:hover {
+            background: #73ABAD;
+            color: #211D1B;
+        }
+    </style>
 </head>
-
 <body>
-<!-- Loader -->
-<div class="loader-wrapper">
-    <div class="loader"></div>
+
+<div class="ascii-art" id="ascii-art"></div>
+
+<div>
+    <button onclick="window.location.href='/sign-up'">Sign Up</button>
+    <span class="or-text">or</span>
+    <button onclick="window.location.href='/sign-in'">Sign In</button>
 </div>
-<!-- End Loader -->
 
-<!-- Navigation Bar -->
-<header class="navbar">
-    <div class="container">
-        <div class="nav-buttons">
-            <button class="nav-button" onclick="window.location.href='/sign-in'">Sign In</button>
-            <button class="nav-button" onclick="window.location.href='/sign-up'">Sign Up</button>
-        </div>
-    </div>
-</header>
-<!-- End Navigation Bar -->
-
-<!-- Main Banner -->
-<section class="main-banner" id="home">
-    <div class="container">
-        <div class="banner-content">
-            <div class="text-content">
-                <h1>Cloud Drive</h1>
-                <p>Start your cloud journey with us.</p>
-                <button class="cta-button">Get Started</button>
-            </div>
-            <div class="image-content">
-                <img src="/image/CLOUD.jpg" alt="FileSync Cloud Storage Image" class="floating">
-            </div>
-        </div>
-    </div>
-</section>
-<!-- End Main Banner -->
-
-<!-- Script for hiding the loader -->
 <script>
-    window.addEventListener("load", function () {
-        const loaderWrapper = document.querySelector(".loader-wrapper");
-        loaderWrapper.style.display = "none";
-    }, true);
-</script>
-</body>
+    banner = [
 
+        "________/\\\\\\\\\\\\\\\\\\__/\\\\\\\\\\\\________________________________________/\\\\\\_____________/\\\\\\\\\\\\\\\\\\\\\\\\_____________________________________________________",
+        " _____/\\\\\\////////__\\////\\\\\\_______________________________________\\/\\\\\\____________\\/\\\\\\////////\\\\\\___________________________________________________",
+        "  ___/\\\\\\/______________\\/\\\\\\_______________________________________\\/\\\\\\____________\\/\\\\\\______\\//\\\\\\________________/\\\\\\______________________________",
+        "   __/\\\\\\________________\\/\\\\\\________/\\\\\\\\\\_____/\\\\\\____/\\\\\\________\\/\\\\\\____________\\/\\\\\\_______\\/\\\\\\__/\\\\/\\\\\\\\\\\\\\__\\///___/\\\\\\____/\\\\\\_____/\\\\\\\\\\\\\\\\__",
+        "    _\\/\\\\\\________________\\/\\\\\\______/\\\\\\///\\\\\\__\\/\\\\\\___\\/\\\\\\___/\\\\\\\\\\\\\\\\\\____________\\/\\\\\\_______\\/\\\\\\_\\/\\\\\\/////\\\\\\__/\\\\\\_\\//\\\\\\__/\\\\\\____/\\\\\\/////\\\\\\_",
+        "     _\\//\\\\\\_______________\\/\\\\\\_____/\\\\\\__\\//\\\\\\_\\/\\\\\\___\\/\\\\\\__/\\\\\\////\\\\\\____________\\/\\\\\\_______\\/\\\\\\_\\/\\\\\\___\\///__\\/\\\\\\__\\//\\\\\\/\\\\\\____/\\\\\\\\\\\\\\\\\\\\\\__",
+        "      __\\///\\\\\\_____________\\/\\\\\\____\\//\\\\\\__/\\\\\\__\\/\\\\\\___\\/\\\\\\_\\/\\\\\\__\\/\\\\\\____________\\/\\\\\\_______/\\\\\\__\\/\\\\\\_________\\/\\\\\\___\\//\\\\\\\\\\____\\//\\\\///////___",
+        "       ____\\////\\\\\\\\\\\\\\\\\\__/\\\\\\\\\\\\\\\\\\__\\///\\\\\\\\\\/___\\//\\\\\\\\\\\\\\\\\\__\\//\\\\\\\\\\\\\\/\\\\___________\\/\\\\\\\\\\\\\\\\\\\\\\\\/___\\/\\\\\\_________\\/\\\\\\____\\//\\\\\\______\\//\\\\\\\\\\\\\\\\\\\\_",
+        "        _______\\/////////__\\/////////_____\\/////______\\/////////____\\///////\\//____________\\////////////_____\\///__________\\///______\\///________\\//////////__"
+
+    ];
+
+    function loopLines(lines, text, index) {
+        if (index < lines.length) {
+            text += lines[index] + '\n';
+            document.getElementById('ascii-art').textContent = text;
+            setTimeout(function() {
+                loopLines(lines, text, index + 1);
+            }, 100); // Speed of typing effect
+        }
+    }
+
+    setTimeout(function() {
+        document.getElementById('ascii-art').style.display = 'block';
+        loopLines(banner, "", 0);
+    }, 100);
+</script>
+
+</body>
 </html>

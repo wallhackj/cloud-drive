@@ -1,0 +1,63 @@
+body {
+    font-family: 'Courier New', Courier, monospace;
+    color: #519975;
+    background-color: #211D1B;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+.container {
+    border: 1px solid #B89076;
+    padding: 20px;
+    border-radius: 5px;
+    width: 400px;
+    background-color: #211D1B;
+    text-align: center;
+}
+.container h1 {
+    margin: 0;
+    font-size: 1.5em;
+    border-bottom: 1px solid #B89076;
+    padding-bottom: 10px;
+    color: #519975; /* Culoarea titlului */
+}
+.container input {
+    width: 90%; /* Ajustează lățimea câmpurilor de input */
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #B89076; /* Bordura câmpurilor de input */
+    border-radius: 3px;
+    background: #211D1B; /* Culoarea fundalului câmpurilor de input */
+    color: #B89076; /* Culoarea textului din câmpurile de input */
+    font-size: 1em;
+}
+.container button {
+    width: 100%;
+    padding: 10px;
+    background-color: #73ABAD; /* Culoarea fundalului butonului */
+    border: none;
+    color: #211D1B; /* Culoarea textului butonului */
+    border-radius: 3px;
+    font-size: 1em;
+    cursor: pointer;
+    font-family: 'Courier New', Courier, monospace;
+    text-shadow: 0 0 5px #73ABAD; /* Efect de text shadow pentru buton */
+}
+.container button:hover {
+    background-color: #B89076; /* Culoarea fundalului butonului când este hoverat */
+    color: #211D1B; /* Culoarea textului butonului când este hoverat */
+}
+.message {
+    margin-top: 20px;
+    color: #B89076; /* Culoarea mesajelor */
+}
+a {
+    color: #9C8394; /* Culoarea link-urilor */
+    text-decoration: inherit;
+}
+a:hover {
+    background: #73ABAD; /* Culoarea fundalului link-urilor când este hoverat */
+    color: #211D1B; /* Culoarea textului link-urilor când este hoverat */
+}
