@@ -16,9 +16,6 @@ import software.amazon.awssdk.services.s3.model.*;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -41,7 +38,7 @@ public class FileStorageService {
 
         try {
             return Mono.fromFuture(() -> bucketManager.createBucket(bucketName)
-                    .thenCompose(v -> client.putObject(putRequest, AsyncRequestBody.fromPublisher(toFlux(file.file())))))
+                            .thenCompose(v -> client.putObject(putRequest, AsyncRequestBody.fromPublisher(toFlux(file.file())))))
                     .then(Mono.just(true))
                     .onErrorResume(e -> {
                         e.printStackTrace();
@@ -98,11 +95,11 @@ public class FileStorageService {
         return Mono.fromFuture(() -> client.copyObject(copyRequest))
                 .flatMap(copyResponse -> deleteFile(bucketName, key)
                         .flatMap(deleteResponse -> {
-                                        if (deleteResponse) {
-                                            return Mono.just(newKey);
-                                        } else {
-                                            return Mono.error(new RuntimeException("Failed to delete original file"));
-                                        }
+                            if (deleteResponse) {
+                                return Mono.just(newKey);
+                            } else {
+                                return Mono.error(new RuntimeException("Failed to delete original file"));
+                            }
                         }))
                 .onErrorResume(e -> {
                     e.printStackTrace();
@@ -110,23 +107,4 @@ public class FileStorageService {
                 });
     }
 
-    public Mono<List<FileInfo>> listAllFiles(String bucketName) {
-        return Mono.fromFuture(bucketManager.bucketExists(bucketName)
-                .thenCompose(bucket -> {
-                    if (!bucket){
-                        return CompletableFuture.failedFuture(new RuntimeException("Bucket does not exist"));
-                    }else {
-                        ListObjectsV2Request listV2Request = ListObjectsV2Request.builder()
-                                .bucket(bucketName)
-                                .build();
-
-                        return client.listObjectsV2(listV2Request)
-                                .thenApply(result -> result.contents()
-                                        .stream()
-                                        .map(s3Object -> new FileInfo(s3Object.key()
-                                                , s3Object.lastModified().toString(), null))
-                                        .collect(Collectors.toList()));
-                    }
-                }));
-    }
 }

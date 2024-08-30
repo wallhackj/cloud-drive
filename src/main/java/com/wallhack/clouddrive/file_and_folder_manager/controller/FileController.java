@@ -15,7 +15,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.util.List;
 
 @Controller
 @AllArgsConstructor
@@ -80,13 +79,6 @@ public class FileController {
                         return ResponseEntity.ok("File renamed successfully");
                     } else return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
                 })
-                .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
-    }
-
-    @GetMapping("/listFiles")
-    public Mono<ResponseEntity<List<FileInfo>>> handleFileList(@RequestParam("username") String username) {
-        return fileService.listAllFiles(username)
-                .map(files -> ResponseEntity.ok().body(files))
                 .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
 

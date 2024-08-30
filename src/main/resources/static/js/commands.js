@@ -2,7 +2,8 @@ const linkedin = "https://md.linkedin.com/in/victor-haideu-b2200226b";
 const github = "https://github.com/wallhackj";
 
 let whoami = [];
-let list = []
+let list = [];
+
 
 async function fetchString(url) {
     try {
@@ -77,10 +78,10 @@ help = [
     '<span class="command">uploadfile</span>     Upload file (work in progress)',
     '<span class="command">find</span>           Want to find something? (work in progress)',
     '<span class="command">uploadfolder</span>   Upload folder (work in progress)',
-    '<span class="command">wget</span>           Download what you want.(work in progress)',
 
     '<span class="command">whoami</span>         Who are you?',
     '<span class="command">ls</span>             List all files in drive.',
+    '<span class="command">wget</span>           Download what you want.(wget filename.png or directory)',
     '<span class="command">mv</span>             Move/Rename Files and Directories (mv foto.jpg photo.jpg or mv directory_name/foto.jpg newDirectory/foto.jpg)',
     '<span class="command">rm</span>             Remove directory or file (rm filename.png or rm directoryName)',
     '<span class="command">social</span>         Display social networks',
@@ -92,7 +93,7 @@ help = [
 ];
 
 banner = [
-    '<span class="index">Cloud Drive Not A Corporation. All knights reserved.</span>',
+    '<span class="index">Cloud Drive Not A Corporation. All rights reserved.</span>',
     '                                                                                                    ',
     '________/\\\\\\\\\\\\\\\\\\__/\\\\\\\\\\\\________________________________________/\\\\\\_____________/\\\\\\\\\\\\\\\\\\\\\\\\_____________________________________________________        ',
     ' _____/\\\\\\////////__\\////\\\\\\_______________________________________\\/\\\\\\____________\\/\\\\\\////////\\\\\\___________________________________________________       ',

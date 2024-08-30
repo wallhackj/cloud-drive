@@ -31,7 +31,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@Testcontainers @SpringBootTest
+@Testcontainers
+@SpringBootTest
 @AutoConfigureMockMvc
 @Import(SecurityConfig.class)
 class AuthControllerTest {
@@ -155,13 +156,13 @@ class AuthControllerTest {
         AuthDTO user = new AuthDTO("mike", "123");
 
         when(authService.login(eq(user), any(HttpServletRequest.class), any(HttpServletResponse.class)))
-                .thenReturn("file");
+                .thenReturn("auth/login");
 
         mvc.perform(post("/sign-in").flashAttr("authDTO", user)
-                .param("username", "mike")
-                .param("password", "123"))
+                        .param("username", "mike")
+                        .param("password", "123"))
                 .andExpect(status().is2xxSuccessful())
-                .andExpect(view().name("file"));
+                .andExpect(view().name("auth/login"));
     }
 
     @Test

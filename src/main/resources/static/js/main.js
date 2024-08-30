@@ -7,11 +7,14 @@ let git = 0;
 let pw = false;
 
 const commands = [];
+let searched = [];
+
 
 setTimeout(function() {
     loopLines(banner, "", 80);
     textarea.focus();
 }, 100);
+
 
 window.addEventListener("keyup", enterKey);
 
@@ -47,24 +50,28 @@ function enterKey(e) {
         }
 }
 
-function commander(cmd) {
+async function commander(cmd) {
+    const word = cmd.toLowerCase().split(' ');
     switch (cmd.toLowerCase().split(' ')[0]) {
         case "mv":
-            setTimeout(handlerRenMov(cmd.toLowerCase().split(' ')[1],
-                cmd.toLowerCase().split(' ')[2]), 80);
+            setTimeout(handlerRenMov(word[1], word[2]), 80);
             break;
         case "rm":
-            setTimeout(handlerRemoveing(cmd.toLowerCase().split(' ')[1]), 80);
+            setTimeout(handlerRemoveing(word[1]), 80);
             break;
         case "wget":
-            setTimeout(handlerDownload(cmd.toLowerCase().split(' ')[1]), 80);
+            setTimeout(handlerDownload(word[1]), 80);
             break;
         case "uploadfolder":
-
+            setTimeout(handlerUploadFolder, 80);
+            break;
         case "find":
-
+            await updateSearchFile(word[1]);
+            loopLines(searched, "color2 margin", 80)
+            break;
         case "uploadfile":
-
+            setTimeout(handlerUploadFile, 80);
+            break;
         case "ls":
             loopLines(list, "color2 margin", 80)
             break;
@@ -76,7 +83,7 @@ function commander(cmd) {
             break;
         case "sudo":
             addLine("Oh no, you're not admin...", "color2", 80);
-            setTimeout(function() {
+            setTimeout(function () {
                 window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
             }, 1000);
             break;
@@ -89,10 +96,10 @@ function commander(cmd) {
             addLine("<br>", "command", 80 * commands.length + 50);
             break;
         case "logout":
-            window.location.href='/logout';
+            window.location.href = '/logout';
             break;
         case "clear":
-            setTimeout(function() {
+            setTimeout(function () {
                 terminal.innerHTML = '<a id="before"></a>';
                 before = document.getElementById("before");
             }, 1);
@@ -113,6 +120,263 @@ function commander(cmd) {
             addLine("<span class=\"inherit\">Command not found. For a list of commands, type <span class=\"command\">'help'</span>.</span>", "error", 100);
             break;
     }
+}
+
+async function updateSearchFile(name) {
+    try {
+        const file = await searchFile(name);
+
+        if (file) {
+            searched = [`${file.lastModified}   ${file.key}`];
+        } else {
+            searched = ['File not found!'];
+        }
+    } catch (error) {
+        console.error('Error updating files:', error);
+    }
+}
+
+async function searchFile(file) {
+    try {
+        const response = await fetch(`/searchFile?username=${encodeURIComponent(whoami)}&searchedFile=${encodeURIComponent(file)}`);
+
+        if (response.ok) {
+            const file = await response.json();
+
+            // Verifică dacă fișierul este definit
+            return file ? {
+                key: file.key,
+                lastModified: formatDate(file.lastModified)
+            } : null;
+        } else {
+            console.error('Failed to fetch file:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error fetching file:', error);
+    }
+
+    return null;
+}
+
+
+function handlerUploadFolder() {
+    const popupWidth = 600;
+    const popupHeight = 400;
+    const left = (window.innerWidth / 2) - (popupWidth / 2);
+    const top = (window.innerHeight / 2) - (popupHeight / 2);
+
+    // Open a new window with specified size and position
+    const popup = window.open('', '', `width=${popupWidth},height=${popupHeight},top=${top},left=${left}`);
+
+    // HTML content for the popup
+    const popupContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Directory Upload</title>
+            <style>
+                body {
+                    font-family: 'Courier New', Courier, monospace;
+                    color: #519975;
+                    background-color: #211D1B;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                    text-align: center;
+                }
+
+                form {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+                input[type="file"] {
+                    margin-bottom: 20px;
+                }
+
+                button {
+                    padding: 10px;
+                    background-color: #73ABAD;
+                    border: none;
+                    color: #211D1B;
+                    border-radius: 3px;
+                    font-size: 1em;
+                    cursor: pointer;
+                }
+
+                button:hover {
+                    background-color: #B89076;
+                    color: #211D1B;
+                }
+            </style>
+        </head>
+        <body>
+            <h2>Select Directory to Upload</h2>
+            <form id="uploadForm">
+                <input type="file" id="fileInput" name="directory" webkitdirectory multiple>
+                <button type="button" onclick="uploadDirectory()">Upload Directory</button>
+            </form>
+
+            <script>
+                function uploadDirectory() {
+                    const input = document.getElementById('fileInput');
+                    const files = input.files;
+
+                    if (files.length === 0) {
+                        alert('No files selected.');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('username', '${whoami}'); // Variabila pentru username
+
+                    for (const file of files) {
+                        formData.append('directory', file);
+                    }
+
+                    fetch('/uploadDirectory', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result) {
+                            alert('Directory uploaded successfully.');
+                        } else {
+                            alert('Directory upload failed.');
+                        }
+                        window.close();  // Inchide fereastra popup dupa upload
+                    })
+                    .catch(error => {
+                        console.error('Error uploading directory:', error);
+                        alert('Failed to upload directory.');
+                    });
+                }
+            </script>
+        </body>
+        </html>
+    `;
+
+    // Write the content to the popup window
+    popup.document.open();
+    popup.document.write(popupContent);
+    popup.document.close();
+}
+
+
+
+function handlerUploadFile() {
+    const popupWidth = 600;
+    const popupHeight = 400;
+    const left = (window.innerWidth / 2) - (popupWidth / 2);
+    const top = (window.innerHeight / 2) - (popupHeight / 2);
+
+    // Open a new window with specified size and position
+    const popup = window.open('', '', `width=${popupWidth},height=${popupHeight},top=${top},left=${left}`);
+
+    // HTML content for the popup
+    const popupContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>File Upload</title>
+            <style>
+                body {
+                    font-family: 'Courier New', Courier, monospace;
+                    color: #519975;
+                    background-color: #211D1B;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    margin: 0;
+                    text-align: center;
+                }
+
+                form {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                }
+
+                input[type="file"] {
+                    margin-bottom: 20px;
+                }
+
+                button {
+                    padding: 10px;
+                    background-color: #73ABAD;
+                    border: none;
+                    color: #211D1B;
+                    border-radius: 3px;
+                    font-size: 1em;
+                    cursor: pointer;
+                }
+
+                button:hover {
+                    background-color: #B89076;
+                    color: #211D1B;
+                }
+            </style>
+        </head>
+        <body>
+            <h2>Select Files to Upload</h2>
+            <form id="uploadForm">
+                <input type="file" id="fileInput" name="file" multiple>
+                <button type="button" onclick="uploadFiles()">Upload</button>
+            </form>
+
+            <script>
+                function uploadFiles() {
+                    const input = document.getElementById('fileInput');
+                    const files = input.files;
+
+                    if (files.length === 0) {
+                        alert('No files selected.');
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('username', '${whoami}'); // Usează variabila pentru username
+
+                    for (const file of files) {
+                        formData.append('file', file);
+                    }
+
+                    fetch('/uploadFile', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.text())
+                    .then(result => {
+                        alert(result);
+                        window.close();  // Close the popup after upload
+                    })
+                    .catch(error => {
+                        console.error('Error uploading files:', error);
+                        alert('Failed to upload files.');
+                    });
+                }
+            </script>
+        </body>
+        </html>
+    `;
+
+    // Write the content to the popup window
+    popup.document.open();
+    popup.document.write(popupContent);
+    popup.document.close();
 }
 
 async function handlerDownload(name) {

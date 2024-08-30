@@ -1,64 +1,32 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/css/style.css">
-    <title>Cloud Drive</title>
+    <link rel="stylesheet" type="text/css" media="screen" href="/static/css/style.css"/>
+    <title>Register</title>
 </head>
-
 <body>
-<!-- Loader -->
-<div class="loader-wrapper">
-    <div class="loader"></div>
-</div>
-<!-- End Loader -->
-
-<!-- Main Banner -->
-<section class="main-banner" id="home">
-    <div class="container">
-        <div class="login-content">
-
-            <h1 class="cloud-drive">Cloud Drive</h1>
-            <hr>
-            <h2 class="login-text">Registration</h2>
-
-            <div th:if="${error != null}" class="alert alert-danger">
-                <span th:text="'Error: ' + ${error}"></span>
-            </div>
-
-            <form th:action="@{/sign-up}" th:object="${authDTO}" method="POST">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" th:field="*{username}" placeholder="Username"
-                           class="form-control mb-4 col-4" id="username">
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" th:field="*{password}" placeholder="Password"
-                           class="form-control mb-4 col-4" id="password">
-                </div>
-
-                <button type="submit" class="btn btn-info col-2">Sign Up</button>
-            </form>
-
-            <hr>
-            <a th:href="@{/sign-in}" class="sign-up-link">Already have an account? Sign In.</a>
-
-        </div>
+<div class="container">
+    <div th:if="${error != null}" class="alert alert-danger">
+        <span th:text="'Error: ' + ${error}"></span>
     </div>
-</section>
-<!-- End Main Banner -->
 
-<!-- Script for hiding the loader -->
-<script>
-    window.addEventListener("load", function () {
-        const loaderWrapper = document.querySelector(".loader-wrapper");
-        loaderWrapper.style.display = "none";
-    }, true);
-</script>
+    <h1 class="index">Register</h1>
+    <form id="registerForm" th:action="@{/sign-up}" th:object="${authDTO}" method="POST">
+        <input type="text" th:field="*{username}" placeholder="Username"
+               class="form-control mb-4 col-4" id="username">
+
+        <input type="password" th:field="*{password}" placeholder="Password"
+               class="form-control mb-4 col-4" id="password">
+        <button type="submit" class="command">Sign up</button>
+    </form>
+    <hr>
+
+    <a th:href="@{/sign-in}" class="sign-up-link">Already have an account? Sign In.</a>
+    <hr>
+    <div id="message" class="message"></div>
+</div>
+
 </body>
-
 </html>
