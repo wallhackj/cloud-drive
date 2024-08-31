@@ -3,6 +3,7 @@ package com.wallhack.clouddrive.file_and_folder_manager.controller;
 import com.wallhack.clouddrive.file_and_folder_manager.entity.FileInfo;
 import com.wallhack.clouddrive.file_and_folder_manager.service.FileStorageService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
@@ -14,32 +15,25 @@ import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-
+@Slf4j
 @Controller
 @AllArgsConstructor
 public class FileController {
     private FileStorageService fileService;
 
-    //username min 3 ,max 63
-
     @PostMapping("/uploadFile")
     public Mono<ResponseEntity<String>> handleFileUpload(@RequestParam("username") String username,
                                                          @RequestParam("file") MultipartFile file) {
-        FileInfo fileInfo;
-        try {
-            fileInfo = new FileInfo(file.getOriginalFilename(),
-                    "never", file.getInputStream());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return Mono.fromCallable(() -> new FileInfo(file.getOriginalFilename(), "never", file.getInputStream()))
+                .flatMap(fileInfo -> fileService.uploadFile(username, fileInfo)
+                        .thenReturn(ResponseEntity.ok("File uploaded successfully")))
+                .onErrorResume(e -> {
+                    log.error("File upload failed :", e);
 
-        return fileService.uploadFile(username, fileInfo)
-                .flatMap(uploadResult -> Mono.just(ResponseEntity.ok("File uploaded successfully")))
-                .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("File upload failed: " + e.getMessage())));
-
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+                });
     }
+
 
     @GetMapping("/downloadFile")
     public Mono<ResponseEntity<byte[]>> handleFileDownload(@RequestParam("username") String username,
@@ -50,7 +44,7 @@ public class FileController {
                         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
                         .body(bytes)) // Set the response body as the byte array
                 .onErrorResume(e -> {
-                    e.printStackTrace();
+                    log.error("Failed to download file: {}", fileName, e);
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
                 });
     }
@@ -64,9 +58,10 @@ public class FileController {
                         return ResponseEntity.ok("File deleted successfully");
                     } else return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
                 })
-                .onErrorResume(e -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body("Error deleting file: " + e.getMessage())));
+                .onErrorResume(e -> {
+                    log.error("Failed to delete file: {}", fileName, e);
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+                });
     }
 
     @PutMapping("/renameFile")
@@ -79,7 +74,10 @@ public class FileController {
                         return ResponseEntity.ok("File renamed successfully");
                     } else return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
                 })
-                .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
+                .onErrorResume(e -> {
+                    log.error("Failed to rename file: {}", fileName, e);
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+                });
     }
 
     private Mono<byte[]> fluxOfDataBufferToByteArray(Flux<DataBuffer> flux) {

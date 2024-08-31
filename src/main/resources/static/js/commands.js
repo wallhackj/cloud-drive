@@ -92,7 +92,7 @@ const help = [
 ];
 
 // Terminal banner display
-const banner = [
+let banner = [
     '<span class="index">Cloud Drive Not A Corporation. All rights reserved.</span>',
     '                                                                                                    ',
     '________/\\\\\\\\\\\\\\\\\\__/\\\\\\\\\\\\________________________________________/\\\\\\_____________/\\\\\\\\\\\\\\\\\\\\\\\\_____________________________________________________        ',

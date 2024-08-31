@@ -2,6 +2,7 @@ package com.wallhack.clouddrive.file_and_folder_manager.service;
 
 import com.wallhack.clouddrive.file_and_folder_manager.entity.FileInfo;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
@@ -17,6 +18,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class FileStorageService {
@@ -25,8 +27,7 @@ public class FileStorageService {
 
     private static Flux<ByteBuffer> toFlux(InputStream inputStream) {
         return DataBufferUtils.readByteChannel(() -> Channels.newChannel(inputStream),
-                        DefaultDataBufferFactory.sharedInstance,
-                        4096)
+                        DefaultDataBufferFactory.sharedInstance, 4096)
                 .flatMapSequential(dataBuffer -> Flux.fromIterable(dataBuffer::readableByteBuffers));
     }
 
@@ -37,15 +38,18 @@ public class FileStorageService {
                 .build();
 
         try {
-            return Mono.fromFuture(() -> bucketManager.createBucket(bucketName)
-                            .thenCompose(v -> client.putObject(putRequest, AsyncRequestBody.fromPublisher(toFlux(file.file())))))
+            return Mono.fromFuture(() -> bucketManager.createBucket(bucketName).thenCompose(v -> client.putObject(putRequest
+                            , AsyncRequestBody.fromPublisher(toFlux(file.file())))))
                     .then(Mono.just(true))
                     .onErrorResume(e -> {
-                        e.printStackTrace();
+                        log.error("Failed to upload file", e);
+
                         return Mono.just(false);
                     });
 
         } catch (Exception e) {
+            log.error("Error in bucketservice", e);
+
             return Mono.error(e);
         }
     }
@@ -57,9 +61,10 @@ public class FileStorageService {
                 .build();
 
         return Mono.fromFuture(() -> client.deleteObject(deleteRequest))
-                .then(Mono.just(true))
+                .thenReturn(true)
                 .onErrorResume(e -> {
-                    e.printStackTrace();
+                    log.error("Failed to delete file", e);
+
                     return Mono.just(false);
                 });
     }
@@ -77,7 +82,8 @@ public class FileStorageService {
                     return Mono.just(dataBufferFlux);
                 })
                 .onErrorResume(e -> {
-                    e.printStackTrace();
+                    log.error("Failed to download file", e);
+
                     return Mono.error(new RuntimeException("Failed to download file", e));
                 });
     }
@@ -94,17 +100,12 @@ public class FileStorageService {
 
         return Mono.fromFuture(() -> client.copyObject(copyRequest))
                 .flatMap(copyResponse -> deleteFile(bucketName, key)
-                        .flatMap(deleteResponse -> {
-                            if (deleteResponse) {
-                                return Mono.just(newKey);
-                            } else {
-                                return Mono.error(new RuntimeException("Failed to delete original file"));
-                            }
-                        }))
+                        .flatMap(deleteResponse -> deleteResponse ?
+                                Mono.just(newKey) : Mono.error(new RuntimeException("Failed to delete original file"))))
                 .onErrorResume(e -> {
-                    e.printStackTrace();
+                    log.error("Failed to rename file", e);
+
                     return Mono.error(new RuntimeException("Failed to rename original file", e));
                 });
     }
-
 }

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Art Sign Up/Sign In</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            color: #519975;
+            background-color: #211D1B;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+
+        .ascii-art {
+            white-space: pre;
+            color: #519975;
+            font-size: 1em;
+            margin-bottom: 20px;
+            display: none; /* Initial hidden to show the typing effect */
+        }
+
+        button {
+            width: 100px;
+            padding: 10px;
+            background-color: #73ABAD;
+            border: none;
+            color: #211D1B;
+            border-radius: 3px;
+            font-size: 1em;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+            text-shadow: 0 0 5px #73ABAD;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #B89076;
+            color: #211D1B;
+        }
+
+        a {
+            color: #9C8394;
+            text-decoration: inherit;
+        }
+
+        a:hover {
+            background: #73ABAD;
+            color: #211D1B;
+        }
+    </style>
+</head>
+<body>
+
+<div class="ascii-art" id="ascii-art"></div>
+
+<script>
+    error = [
+       " /$$   /$$  /$$$$$$  /$$   /$$",
+        "| $$  | $$ /$$$_  $$| $$  | $$",
+        "| $$  | $$| $$$$\\ $$| $$  | $$",
+        "| $$$$$$$$| $$ $$ $$| $$$$$$$$",
+        "|_____  $$| $$\\ $$$$|_____  $$",
+        "      | $$| $$ \\ $$$      | $$",
+        "      | $$|  $$$$$$/      | $$",
+        "      |__/ \\______/       |__/",
+        "",
+        "Not Found"
+    ];
+
+    function loopLines(lines, text, index) {
+        if (index < lines.length) {
+            text += lines[index] + '\n';
+            document.getElementById('ascii-art').textContent = text;
+            setTimeout(function () {
+                loopLines(lines, text, index + 1);
+            }, 100); // Speed of typing effect
+        }
+    }
+
+    setTimeout(function () {
+        document.getElementById('ascii-art').style.display = 'block';
+        loopLines(error, "", 0);
+    }, 100);
+</script>
+
+</body>
+</html>
