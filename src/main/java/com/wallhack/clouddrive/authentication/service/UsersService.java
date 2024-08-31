@@ -3,13 +3,12 @@ package com.wallhack.clouddrive.authentication.service;
 import com.wallhack.clouddrive.authentication.entity.UsersPOJO;
 import com.wallhack.clouddrive.authentication.repository.UsersRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
-import static com.wallhack.clouddrive.MyUtils.isStringEmpty;
+import static com.wallhack.clouddrive.file_and_folder_manager.rest.MyUtils.isStringEmpty;
 
 @Service
 @AllArgsConstructor
@@ -32,10 +31,8 @@ public class UsersService {
         return usersRepository.findAll();
     }
 
-    public UsersPOJO findById(long id) {
-        Optional<UsersPOJO> user = usersRepository.findById(id);
-
-        return user.orElseThrow(() -> new UsernameNotFoundException("User not found" + id));
+    public Optional<UsersPOJO> userExists(String username) {
+        return usersRepository.findByUsername(username);
     }
 
     public boolean deleteUser(long id) {
@@ -44,9 +41,5 @@ public class UsersService {
             return true;
         }
         return false;
-    }
-
-    public Optional<UsersPOJO> userExists(String username) {
-        return usersRepository.findByUsername(username);
     }
 }

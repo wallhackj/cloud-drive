@@ -1,6 +1,6 @@
 package com.wallhack.clouddrive.file_and_folder_manager.service;
 
-import com.wallhack.clouddrive.file_and_folder_manager.exception.BucketDoesNotExistException;
+import com.wallhack.clouddrive.file_and_folder_manager.rest.BucketDoesNotExistException;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.S3AsyncClient;

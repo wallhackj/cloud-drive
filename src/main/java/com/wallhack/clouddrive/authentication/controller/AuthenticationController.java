@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 
+@Slf4j
 @Controller
 @AllArgsConstructor
 public class AuthenticationController {
@@ -34,7 +36,7 @@ public class AuthenticationController {
     public String registerUser(@Valid @ModelAttribute("authDTO") AuthDTO authDTO, BindingResult result,
                                Model model) {
         if (result.hasErrors()) {
-            model.addAttribute("error", "Eroare de validare");
+            model.addAttribute("error", "Username or password is wrong?");
             return "auth/registration";
         }
 
@@ -44,11 +46,13 @@ public class AuthenticationController {
             if (isRegistered.equals("login")) {
                 return "redirect:/sign-in";
             } else {
-                model.addAttribute("error", "1");
+                log.warn("Something went wrong at registation method!");
+                model.addAttribute("error", "Something went wrong !");
             }
 
         } catch (Exception ex) {
-            model.addAttribute("error", "Eroare neașteptată: " + ex.getMessage());
+            log.warn("Something went wrong while registering user", ex);
+            model.addAttribute("error", "Some error: " + ex.getMessage());
         }
 
         return "auth/registration";
@@ -76,11 +80,12 @@ public class AuthenticationController {
                 return "index";
             }
 
-        }catch (BadCredentialsException bcEx) {
-            model.addAttribute("error", "Bad Credentials"); // Example error code
-        }catch (Exception e) {
+        } catch (BadCredentialsException bcEx) {
+            log.warn("Bad Credentials");
+            model.addAttribute("error", "Bad Credentials");
+        } catch (Exception e) {
+            log.warn("Error", e);
             model.addAttribute("error", "Unknown Error");
-            e.printStackTrace();
         }
 
         return "auth/login";

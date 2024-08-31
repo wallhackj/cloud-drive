@@ -4,95 +4,95 @@ const github = "https://github.com/wallhackj";
 let whoami = [];
 let list = [];
 
-
+// Util function to fetch string data from a URL
 async function fetchString(url) {
     try {
         const response = await fetch(url);
-        if (response.ok) {
-            return await response.text();
-        }
+        if (!response.ok) new Error(`Failed to fetch: ${response.statusText}`);
+        return await response.text();
     } catch (error) {
-        console.error('Error fetching string:', error);
+        addLine("Something bad on server side!", "color2", 0);
         throw error;
     }
 }
 
+// Fetch and update the 'whoami' information
 async function updateWhoami() {
     try {
-        whoami = [
-            `${await fetchString('/username')}`,
-        ];
+        whoami = [await fetchString('/username')];
     } catch (error) {
-        console.error('Error updating whoami:', error);
+        addLine("Who are you?", "color2", 0);
+        whoami = [];
     }
 }
 
-function formatDate(isoString) {
-    const date = new Date(isoString);
-    return date.toLocaleString();
-}
+// Format ISO date string to a more readable format
+const formatDate = isoString => new Date(isoString).toLocaleString();
 
+// Fetch and list all files for the current user
 async function listFiles() {
     try {
-        const username = await fetchString('/username');
-        const response = await fetch(`/listFiles?username=${encodeURIComponent(username)}`);
 
-        if (response.ok) {
-            const files = await response.json();
+        const response = await fetch(`/listFiles?username=${encodeURIComponent(whoami)}`);
 
-            return files.map(file => ({
-                key: file.key,
-                lastModified: formatDate(file.lastModified)
-            }));
-        } else {
-            console.error('Failed to fetch file list:', response.statusText);
-        }
+        if (!response.ok) new Error(`Failed to fetch files: ${response.statusText}`);
+
+        const files = await response.json();
+        return files.map(file => ({
+            key: file.key,
+            lastModified: formatDate(file.lastModified)
+        }));
     } catch (error) {
-        console.error('Error fetching files:', error);
+        addLine("Server said something is wrong!", "color2", 0);
     }
 
     return [];
 }
 
+// Update the file list for the UI
 async function updateFiles() {
     try {
-        const files = await listFiles();
-
-        list = files.map(file => `${file.lastModified}   ${file.key}`);
+        // Ensure the username is always updated before fetching files
+        await updateWhoami();
+        list = (await listFiles()).map(file => `${file.lastModified}   ${file.key}`);
     } catch (error) {
-        console.error('Error updating files:', error);
+        addLine("Updating error!", "color2", 0);
     }
 }
 
-window.addEventListener("load", updateWhoami);
-window.addEventListener("load", updateFiles);
+// Initialize the application
+window.addEventListener("load", async () => {
+    await updateFiles();  // Combine updating username and files into one function
+});
 
-social = [
+// Social links data
+const social = [
     "<br>",
-    'LinkedIn: <a href="' + linkedin + '" target="_blank">Victor Haideu' + "</a>",
-    'GitHub: <a href="' + github + '" target="_blank"> wallhack' + "</a>",
+    `LinkedIn: <a href="${linkedin}" target="_blank">Victor Haideu</a>`,
+    `GitHub: <a href="${github}" target="_blank">wallhack</a>`,
     "<br>"
 ];
 
-help = [
-    '<span class="command">uploadfile</span>     Upload file (work in progress)',
-    '<span class="command">find</span>           Want to find something? (work in progress)',
-    '<span class="command">uploadfolder</span>   Upload folder (work in progress)',
-
+// Help command instructions
+const help = [
     '<span class="command">whoami</span>         Who are you?',
-    '<span class="command">ls</span>             List all files in drive.',
-    '<span class="command">wget</span>           Download what you want.(wget filename.png or directory)',
-    '<span class="command">mv</span>             Move/Rename Files and Directories (mv foto.jpg photo.jpg or mv directory_name/foto.jpg newDirectory/foto.jpg)',
-    '<span class="command">rm</span>             Remove directory or file (rm filename.png or rm directoryName)',
-    '<span class="command">social</span>         Display social networks',
-    '<span class="command">history</span>        View command history',
-    '<span class="command">help</span>           You obviously already know what this does',
-    '<span class="command">banner</span>         Display the header',
-    '<span class="command">clear</span>          Cleaning of terminal',
-    '<span class="command">logout</span>         Logout ofc',
+    '<span class="command">uploadfile</span>     Upload file.',
+    '<span class="command">uploadfolder</span>   Upload folder.',
+    '<span class="command">find</span>           Want to find something? (find filename)',
+    '<span class="command">ls</span>             List all files in drive. (Reload may help)',
+    '<span class="command">wget</span>           Download what you want. (wget filename.png or directory)',
+    '<span class="command">mv</span>             Move/Rename Files and Directories. (mv foto.jpg photo.jpg or mv directory_name/foto.jpg newDirectory/foto.jpg)',
+    '<span class="command">rm</span>             Remove directory or file. (rm filename.png or rm directoryName)',
+    '<span class="command">social</span>         Display social networks.',
+    '<span class="command">history</span>        View command history.',
+    '<span class="command">help</span>           You obviously already know what this does.',
+    '<span class="command">banner</span>         Display the header.',
+    '<span class="command">clear</span>          Cleaning of terminal.',
+    '<span class="command">logout</span>         Logout ofc.',
 ];
 
-banner = [
+// Terminal banner display
+const banner = [
     '<span class="index">Cloud Drive Not A Corporation. All rights reserved.</span>',
     '                                                                                                    ',
     '________/\\\\\\\\\\\\\\\\\\__/\\\\\\\\\\\\________________________________________/\\\\\\_____________/\\\\\\\\\\\\\\\\\\\\\\\\_____________________________________________________        ',
@@ -106,5 +106,5 @@ banner = [
     '        _______\\/////////__\\/////////_____\\/////______\\/////////____\\///////\\//____________\\////////////_____\\///__________\\///______\\///________\\//////////__',
     '                                                                                                    ',
     '<span class="color2">Welcome to my interactive web terminal.</span>',
-    "<span class=\"color2\">For a list of available commands, type</span> <span class=\"command\">'help'</span><span class=\"color2\">.</span>",
+    '<span class="color2">For a list of available commands, type</span> <span class="command">\'help\'</span><span class="color2">.</span>',
 ];

@@ -2,7 +2,7 @@ package com.wallhack.clouddrive.authentication.service;
 
 import com.wallhack.clouddrive.authentication.dto.AuthDTO;
 import com.wallhack.clouddrive.authentication.entity.UsersPOJO;
-import com.wallhack.clouddrive.authentication.exception.UserAlreadyExistException;
+import com.wallhack.clouddrive.authentication.UserAlreadyExistException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Setter;
@@ -25,7 +25,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-@Service @Setter
+@Service
+@Setter
 public class AuthService {
     @Value(value = "${custom.max.session}")
     private int maxSession;

@@ -1,4 +1,4 @@
-package com.wallhack.clouddrive.file_and_folder_manager.exception;
+package com.wallhack.clouddrive.file_and_folder_manager.rest;
 
 import software.amazon.awssdk.services.s3.model.S3Exception;
 

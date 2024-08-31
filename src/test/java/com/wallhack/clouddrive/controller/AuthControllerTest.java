@@ -3,7 +3,7 @@ package com.wallhack.clouddrive.controller;
 import com.redis.testcontainers.RedisContainer;
 import com.wallhack.clouddrive.authentication.config.SecurityConfig;
 import com.wallhack.clouddrive.authentication.dto.AuthDTO;
-import com.wallhack.clouddrive.authentication.exception.UserAlreadyExistException;
+import com.wallhack.clouddrive.authentication.UserAlreadyExistException;
 import com.wallhack.clouddrive.authentication.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
