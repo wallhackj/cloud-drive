@@ -14,7 +14,7 @@
 
     <h1 class="index">Register</h1>
     <form id="registerForm" th:action="@{/sign-up}" th:object="${authDTO}" method="POST">
-        <input type="text" th:field="*{username}" placeholder="Username"
+        <input type="text" th:field="*{username}" placeholder="Username (min 3 & max 20)"
                class="form-control mb-4 col-4" id="username">
 
         <input type="password" th:field="*{password}" placeholder="Password"

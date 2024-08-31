@@ -2,10 +2,11 @@ package com.wallhack.clouddrive.authentication.service;
 
 import com.wallhack.clouddrive.authentication.dto.AuthDTO;
 import com.wallhack.clouddrive.authentication.entity.UsersPOJO;
-import com.wallhack.clouddrive.authentication.exception.UserAlreadyExistException;
+import com.wallhack.clouddrive.authentication.UserAlreadyExistException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,7 +26,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-@Service @Setter
+@Service
+@Setter
+@Slf4j
 public class AuthService {
     @Value(value = "${custom.max.session}")
     private int maxSession;
@@ -59,6 +62,7 @@ public class AuthService {
         Optional<UsersPOJO> exists = usersService.userExists(username);
 
         if (exists.isPresent()) {
+            log.info("User {} already exists", username);
             throw new UserAlreadyExistException(username + " exists");
         }
 
@@ -67,8 +71,10 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
 
         if (usersService.saveUser(user)) {
+            log.info("Saved user {}", username);
             return "login";
         } else {
+            log.info("Failed to save user {}", username);
             return "register";
         }
     }

@@ -2,6 +2,7 @@ package com.wallhack.clouddrive.file_and_folder_manager.service;
 
 import com.wallhack.clouddrive.file_and_folder_manager.entity.FileInfo;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -10,14 +11,13 @@ import reactor.core.publisher.Mono;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
-import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class FolderStorageService {
@@ -29,19 +29,22 @@ public class FolderStorageService {
         return Mono.fromFuture(() -> bucketManager.createBucket(bucketName))
                 .flatMapMany(bucket -> Flux.fromIterable(files)
                         .flatMap(file -> {
-                            String key = file.getOriginalFilename();
                             try {
+                                String key = file.getOriginalFilename();
                                 InputStream inputStream = file.getInputStream();
                                 FileInfo fileInfo = new FileInfo(key, "", inputStream);
+
                                 return fileStorageService.uploadFile(bucketName, fileInfo);
                             } catch (IOException e) {
+
                                 return Mono.error(e);
                             }
                         })
                 )
                 .then(Mono.just(true)) // Complete the whole process with a successful boolean
                 .onErrorResume(e -> {
-                    e.printStackTrace();
+                    log.error("Failed to upload a folder{}", e.getMessage());
+
                     return Mono.just(false); // Return false in case of error
                 });
     }
@@ -55,10 +58,11 @@ public class FolderStorageService {
                     if (key.endsWith("/")) {
                         // If it's a folder, recursively download its contents
                         String subfolderName = key.substring(0, key.length() - 1); // Remove trailing '/'
+
                         return downloadFolder(bucketName, subfolderName).flux(); // Recursively call downloadFolder
                     } else {
                         // If it's a file, download the file and return its data buffer Flux
-                        return  fileStorageService.downloadFile(bucketName, key)
+                        return fileStorageService.downloadFile(bucketName, key)
                                 .flatMapMany(Flux::from); // Flatten CompletableFuture<Flux<DataBuffer>> to Flux<DataBuffer>
                     }
                 })
@@ -69,14 +73,14 @@ public class FolderStorageService {
                     return listKeysInFolder(bucketName, folderName)
                             .flatMap(filenames -> ZipDataBuffer.toZipFlux(dataBuffers, filenames))// Zip data buffers with filenames
                             .onErrorResume(e -> {
-                                e.printStackTrace();
+                                log.error("Failed to download a folder{}", e.getMessage());
                                 return Mono.error(e);
                             });
                 });
     }
 
     private Mono<List<String>> listKeysInFolder(String bucketName, String folderName) {
-        return Mono.fromFuture(() -> CompletableFuture.supplyAsync(() -> {
+        return Mono.defer(() -> {
             List<String> keys = new ArrayList<>();
             String prefix = folderName.endsWith("/") ? folderName : folderName + "/";
 
@@ -85,21 +89,31 @@ public class FolderStorageService {
                     .prefix(prefix)
                     .build();
 
-            ListObjectsV2Response listObjectsResponse;
-            String continuationToken = null;
-
-            do {
-                listObjectsResponse = client.listObjectsV2(listObjects.toBuilder().continuationToken(continuationToken).build()).join();
-                for (S3Object s3Object : listObjectsResponse.contents()) {
-                    keys.add(s3Object.key());
-                }
-                continuationToken = listObjectsResponse.nextContinuationToken();
-            } while (continuationToken != null);
-
-            return keys;
-        }));
+            return Flux.defer(() -> listKeysInFolderRecursive(listObjects, keys))
+                    .then(Mono.just(keys));
+        });
     }
 
+    private Mono<Void> listKeysInFolderRecursive(ListObjectsV2Request listObjects, List<String> keys) {
+        return fetchListObjects(listObjects)
+                .flatMapMany(response -> {
+                    response.contents().forEach(s3Object -> keys.add(s3Object.key()));
+                    String continuationToken = response.nextContinuationToken();
+                    if (continuationToken != null) {
+                        ListObjectsV2Request nextRequest = listObjects.toBuilder()
+                                .continuationToken(continuationToken)
+                                .build();
+                        return listKeysInFolderRecursive(nextRequest, keys);
+                    } else {
+                        return Mono.empty();
+                    }
+                })
+                .then();
+    }
+
+    private Mono<ListObjectsV2Response> fetchListObjects(ListObjectsV2Request request) {
+        return Mono.fromFuture(() -> client.listObjectsV2(request));
+    }
 
     public Mono<Boolean> deleteFolder(String bucketName, String folderName) {
         return listKeysInFolder(bucketName, folderName)
@@ -116,7 +130,8 @@ public class FolderStorageService {
                 })
                 .then(Mono.just(true))
                 .onErrorResume(e -> {
-                    e.printStackTrace();
+                    log.error("Failed to delete a folder{}", folderName);
+
                     return Mono.just(false);
                 });
     }
@@ -127,11 +142,13 @@ public class FolderStorageService {
                 .flatMap(key -> {
                     // Construct the new key for each file
                     String newKey = key.replace(folderName, newFolderName);
+
                     return fileStorageService.renameOrMoveFile(bucketName, key, newKey);
                 })
                 .then(Mono.just(newFolderName))
                 .onErrorResume(e -> {
-                    e.printStackTrace();
+                   log.error("Failed to rename a folder{}", folderName);
+
                     return Mono.just(folderName); // Return original folder name if error occurs
                 });
     }

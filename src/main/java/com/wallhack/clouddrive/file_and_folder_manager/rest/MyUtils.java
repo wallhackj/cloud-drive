@@ -1,4 +1,4 @@
-package com.wallhack.clouddrive;
+package com.wallhack.clouddrive.file_and_folder_manager.rest;
 
 public class MyUtils {
     public static boolean isStringEmpty(String str, String str2) {

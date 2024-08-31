@@ -30,7 +30,9 @@ function enterKey(e) {
             commands.push(command.innerHTML);
             git = commands.length;
             addLine("user@terminal.com:~$ " + command.innerHTML, "no-animation", 0);
-            commander(command.innerHTML.toLowerCase());
+            commander(command.innerHTML.toLowerCase()).then(r => {
+                console.log(r);
+            });
             command.innerHTML = "";
             textarea.value = "";
         }
@@ -54,13 +56,13 @@ async function commander(cmd) {
     const word = cmd.toLowerCase().split(' ');
     switch (cmd.toLowerCase().split(' ')[0]) {
         case "mv":
-            setTimeout(handlerRenMov(word[1], word[2]), 80);
+            setTimeout(() => handlerRenMov(word[1], word[2]), 80);
             break;
         case "rm":
-            setTimeout(handlerRemoveing(word[1]), 80);
+            setTimeout(() =>handlerRemoveing(word[1]), 80);
             break;
         case "wget":
-            setTimeout(handlerDownload(word[1]), 80);
+            setTimeout(() =>handlerDownload(word[1]), 80);
             break;
         case "uploadfolder":
             setTimeout(handlerUploadFolder, 80);
