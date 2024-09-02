@@ -45,6 +45,9 @@ public class SearchService {
                     String key = fileInfo.key().toLowerCase();
                     String searchFileName = fileName.toLowerCase();
 
+//                    System.out.println(key.substring(fileInfo.key().lastIndexOf("/") + 1));
+//                    System.out.println(key.substring(fileInfo.key().lastIndexOf("/") + 1, fileInfo.key().lastIndexOf(".")));
+
                     return searchFileName.equals(key.substring(fileInfo.key().lastIndexOf("/") + 1))
                             || searchFileName.equals(key.substring(fileInfo.key().lastIndexOf("/") + 1, fileInfo.key().lastIndexOf(".")));
                 })

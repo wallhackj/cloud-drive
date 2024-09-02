@@ -13,7 +13,6 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,20 +27,9 @@ public class FolderStorageService {
     public Mono<Boolean> uploadFolder(String bucketName, List<MultipartFile> files) {
         return Mono.fromFuture(() -> bucketManager.createBucket(bucketName))
                 .flatMapMany(bucket -> Flux.fromIterable(files)
-                        .flatMap(file -> {
-                            try {
-                                String key = file.getOriginalFilename();
-                                InputStream inputStream = file.getInputStream();
-                                FileInfo fileInfo = new FileInfo(key, "", inputStream);
-
-                                return fileStorageService.uploadFile(bucketName, fileInfo);
-                            } catch (IOException e) {
-
-                                return Mono.error(e);
-                            }
-                        })
+                        .flatMap(file -> uploadResult(bucketName, file))
                 )
-                .then(Mono.just(true)) // Complete the whole process with a successful boolean
+                .all(uploadFolder -> uploadFolder)
                 .onErrorResume(e -> {
                     log.error("Failed to upload a folder{}", e.getMessage());
 
@@ -49,6 +37,33 @@ public class FolderStorageService {
                 });
     }
 
+    private Mono<Boolean> uploadResult(String bucketName, MultipartFile file) {
+        String key = file.getOriginalFilename();
+        if (isValidFilename(key)) {
+            return Mono.fromCallable(file::getInputStream)
+                    .flatMap(inputStream -> {
+                        FileInfo fileInfo = new FileInfo(key, "", inputStream);
+
+                        return fileStorageService.uploadFile(bucketName, fileInfo);
+                    })
+                    .onErrorResume(IOException.class, e -> {
+                        log.error("Failed to get input stream for file '{}': {}", key, e.getMessage());
+
+                        return Mono.just(false);
+                    });
+        }
+        log.warn("Skipping file with invalid name '{}'", key);
+
+        return Mono.just(false);
+    }
+
+    private boolean isValidFilename(String filename) {
+        // Filename should not contain "." or "\\" or any other invalid characters
+        // Adjust the regular expression as needed to restrict more characters
+        String regex = "^[^\\\\.]+$"; // Regex to disallow '.' and '\\'
+
+        return filename != null && filename.matches(regex);
+    }
 
     public Mono<byte[]> downloadFolder(String bucketName, String folderName) {
         return listKeysInFolder(bucketName, folderName)
@@ -147,7 +162,7 @@ public class FolderStorageService {
                 })
                 .then(Mono.just(newFolderName))
                 .onErrorResume(e -> {
-                   log.error("Failed to rename a folder{}", folderName);
+                    log.error("Failed to rename a folder{}", folderName);
 
                     return Mono.just(folderName); // Return original folder name if error occurs
                 });

@@ -252,7 +252,7 @@ function handlerUploadFolder() {
                         if (result) {
                             alert('Directory uploaded successfully.');
                         } else {
-                            alert('Directory upload failed.');
+                            alert('Directory upload failed, maybe rename or check size.');
                         }
                         window.close();  // Inchide fereastra popup dupa upload
                     })
@@ -367,7 +367,7 @@ function handlerUploadFile() {
                     })
                     .catch(error => {
                         console.error('Error uploading files:', error);
-                        alert('Failed to upload files.');
+                        alert('File to upload failed, maybe rename or check size.');
                     });
                 }
             </script>
@@ -422,7 +422,6 @@ async function handlerDownload(name) {
         }
     } catch (error) {
         addLine("Error handling download.", "color2", 0);
-        console.error('Error handling download:', error);
     }
 }
 
@@ -452,7 +451,6 @@ async function handlerRemoveing(name) {
         }
     } catch (error) {
         addLine("Error handling deleting.", "color2", 0);
-        console.error('Error handling rename or move:', error);
     }
 }
 
@@ -481,7 +479,6 @@ async function handlerRenMov(from, to) {
         }
     } catch (error) {
         addLine("Error handling rename or move.", "color2", 0);
-        console.error('Error handling rename or move:', error);
     }
 }
 
