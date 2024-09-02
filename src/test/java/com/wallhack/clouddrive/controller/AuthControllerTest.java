@@ -93,8 +93,8 @@ class AuthControllerTest {
         when(authService.register(user)).thenReturn("login");
 
         mvc.perform(post("/sign-up")
-                        .param("username", "mike") // Simulate form field for username
-                        .param("password", "123")) // Simulate form field for password
+                        .param("username", "mike")
+                        .param("password", "123"))
                 .andExpect(status().is3xxRedirection()) // Expecting a redirection
                 .andExpect(redirectedUrl("/sign-in")); // Expect redirection to /sign-in
 
@@ -106,16 +106,14 @@ class AuthControllerTest {
     void testNewUserRegistrationSameUsernameError() {
         AuthDTO user = new AuthDTO("mike", "123");
 
-        // Mock the case where user already exists
         when(authService.register(user)).thenThrow(new UserAlreadyExistException("User already exists"));
 
-        // Perform the POST request
         mvc.perform(post("/sign-up")
                         .param("username", "mike")
                         .param("password", "123"))
                 .andExpect(status().isOk()) // Expecting a successful response as the page is rendered
                 .andExpect(view().name("auth/registration")) // Check that the view is the registration page
-                .andExpect(model().attribute("error", "Eroare neașteptată: User already exists")); // Check for the error message
+                .andExpect(model().attribute("error", "Some error: User already exists")); // Check for the error message
 
         // Verify that the register method was called with the correct argument
         verify(authService).register(user);
@@ -129,10 +127,10 @@ class AuthControllerTest {
         when(authService.register(user)).thenThrow(new IllegalArgumentException("Username and password must not be empty"));
 
         mvc.perform(post("/sign-up")
-                        .flashAttr("authDTO", user)) // Note the corrected attribute name
+                        .flashAttr("authDTO", user))
                 .andExpect(status().isOk()) // Expecting a 200 OK as the page is rendered with errors
                 .andExpect(view().name("auth/registration")) // Check that the view is the registration page
-                .andExpect(model().attribute("error", "Eroare de validare")); // Check for the validation error message
+                .andExpect(model().attribute("error", "Username or password is wrong?")); // Check for the validation error message
     }
 
     @Test
@@ -147,7 +145,7 @@ class AuthControllerTest {
                         .param("password", "mimi"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("auth/registration"))
-                .andExpect(model().attribute("error", "Eroare de validare"));
+                .andExpect(model().attribute("error", "Username or password is wrong?"));
     }
 
     @Test
@@ -188,7 +186,7 @@ class AuthControllerTest {
         mvc.perform(post("/sign-in").flashAttr("authDTO", user)
                         .param("username", "mik")
                         .param("password", "123"))
-                .andExpect(status().isOk())  // is2xxSuccessful() poate fi înlocuit cu isOk()
+                .andExpect(status().isOk())
                 .andExpect(view().name("auth/login"))
                 .andExpect(model().attribute("error", "Bad Credentials"));
     }

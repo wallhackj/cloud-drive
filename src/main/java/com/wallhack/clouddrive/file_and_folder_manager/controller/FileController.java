@@ -41,7 +41,7 @@ public class FileController {
                 .flatMap(this::fluxOfDataBufferToByteArray)
                 .map(bytes -> ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                        .body(bytes)) // Set the response body as the byte array
+                        .body(bytes)) // Set the response body as the byte array because it's not encrypted :(
                 .onErrorResume(e -> {
                     log.error("Failed to download file: {}", fileName, e);
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());

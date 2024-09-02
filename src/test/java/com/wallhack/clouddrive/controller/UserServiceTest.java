@@ -93,36 +93,27 @@ public class UserServiceTest {
 
     @Test
     void deleteUserFromRepository() {
-        // Crearea unui utilizator existent
         UsersPOJO user = new UsersPOJO();
         user.setId(1L);
         user.setUsername("mike");
         user.setPassword("123");
 
-        // Simularea comportamentului repository-ului pentru a găsi utilizatorul
         when(usersRepository.findByUsername("mike")).thenReturn(Optional.of(user));
 
-        // Obține utilizatorul din repository
         UsersPOJO foundUser = usersRepository.findByUsername("mike").orElse(null);
 
-        // Verifică că utilizatorul a fost găsit
         Assertions.assertNotNull(foundUser);
         Assertions.assertEquals("mike", foundUser.getUsername());
         Assertions.assertEquals("123", foundUser.getPassword());
 
-        // Simulează ștergerea utilizatorului
         when(usersService.deleteUser(foundUser.getId())).thenReturn(true);
 
-        // Șterge utilizatorul
         boolean isDeleted = usersService.deleteUser(foundUser.getId());
 
-        // Verifică că ștergerea a avut succes
         Assertions.assertTrue(isDeleted);
 
-        // Simulează comportamentul repository-ului după ștergerea utilizatorului
         when(usersRepository.findByUsername("mike")).thenReturn(Optional.empty());
 
-        // Verifică că utilizatorul nu mai poate fi găsit
         UsersPOJO deletedUser = usersRepository.findByUsername("mike").orElse(null);
         Assertions.assertNull(deletedUser);
     }

@@ -55,8 +55,7 @@ public class FolderStorageService {
 
     private boolean isValidFilename(String filename) {
         // Filename should not contain "." or "\\" or any other invalid characters
-        // Adjust the regular expression as needed to restrict more characters
-        String regex = "^[^\\\\.]+$"; // Regex to disallow '.' and '\\'
+        String regex = "^[^\\\\.!?]+$"; // Regex to disallow '.' and '\\'
         return filename != null && filename.matches(regex);
     }
 

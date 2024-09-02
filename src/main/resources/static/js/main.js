@@ -30,7 +30,7 @@ function enterKey(e) {
             commands.push(command.innerHTML);
             git = commands.length;
             addLine("user@terminal.com:~$ " + command.innerHTML, "no-animation", 0);
-            commander(command.innerHTML.toLowerCase()).then(r => {
+            commander(command.innerHTML).then(r => {
                 console.log(r);
             });
             command.innerHTML = "";
@@ -52,23 +52,48 @@ function enterKey(e) {
         }
 }
 
+function splitArguments(args) {
+    // Ensure the input is a string
+    if (typeof args !== 'string') {
+        throw new TypeError('Expected a string as input');
+    }
+
+    const firstPeriodIndex = args.indexOf('.');
+
+    if (firstPeriodIndex === -1) {
+        return [args.trim(), ''];
+    }
+    const nextSpaceIndex = args.indexOf(' ', firstPeriodIndex + 1);
+    const firstPart = nextSpaceIndex === -1 ? args.trim() : args.slice(0, nextSpaceIndex).trim();
+    const remainingPart = nextSpaceIndex === -1 ? '' : args.slice(nextSpaceIndex + 1).trim();
+
+    return [firstPart, remainingPart];
+}
+
+
 async function commander(cmd) {
-    const word = cmd.toLowerCase().split(' ');
-    switch (cmd.toLowerCase().split(' ')[0]) {
+    const word = cmd.split(' ');
+    const command = word[0];
+    const args = word.slice(1).join(' ');
+    const mvArgs = splitArguments(args);
+
+    switch (command) {
         case "mv":
-            setTimeout(() => handlerRenMov(word[1], word[2]), 80);
+            const firstArg = mvArgs[0];
+            const secondArg = mvArgs[1];
+            setTimeout(() => handlerRenMov(firstArg, secondArg), 80);
             break;
         case "rm":
-            setTimeout(() =>handlerRemoveing(word[1]), 80);
+            setTimeout(() =>handlerRemoveing(args), 80);
             break;
         case "wget":
-            setTimeout(() =>handlerDownload(word[1]), 80);
+            setTimeout(() =>handlerDownload(args), 80);
             break;
         case "uploadfolder":
             setTimeout(handlerUploadFolder, 80);
             break;
         case "find":
-            await updateSearchFile(word[1]);
+            await updateSearchFile(args.join(' '));
             loopLines(searched, "color2 margin", 80)
             break;
         case "uploadfile":
@@ -109,7 +134,6 @@ async function commander(cmd) {
         case "banner":
             loopLines(banner, "", 80);
             break;
-        // socials
         case "linkedin":
             addLine("Opening LinkedIn...", "color2", 0);
             newTab(linkedin);
@@ -145,7 +169,6 @@ async function searchFile(file) {
         if (response.ok) {
             const file = await response.json();
 
-            // Verifică dacă fișierul este definit
             return file ? {
                 key: file.key,
                 lastModified: formatDate(file.lastModified)
@@ -237,7 +260,7 @@ function handlerUploadFolder() {
                     }
 
                     const formData = new FormData();
-                    formData.append('username', '${whoami}'); // Variabila pentru username
+                    formData.append('username', '${whoami}'); 
 
                     for (const file of files) {
                         formData.append('directory', file);
@@ -254,7 +277,7 @@ function handlerUploadFolder() {
                         } else {
                             alert('Directory upload failed, maybe rename or check size.');
                         }
-                        window.close();  // Inchide fereastra popup dupa upload
+                        window.close();  
                     })
                     .catch(error => {
                         console.error('Error uploading directory:', error);
@@ -350,7 +373,7 @@ function handlerUploadFile() {
                     }
 
                     const formData = new FormData();
-                    formData.append('username', '${whoami}'); // Usează variabila pentru username
+                    formData.append('username', '${whoami}'); 
 
                     for (const file of files) {
                         formData.append('file', file);
@@ -363,7 +386,7 @@ function handlerUploadFile() {
                     .then(response => response.text())
                     .then(result => {
                         alert(result);
-                        window.close();  // Close the popup after upload
+                        window.close();  
                     })
                     .catch(error => {
                         console.error('Error uploading files:', error);
@@ -385,7 +408,6 @@ async function handlerDownload(name) {
     try {
         let url;
         if (name.includes('.')) {
-            // For files
             url = `/downloadFile?username=${encodeURIComponent(whoami)}&fileName=${encodeURIComponent(name)}`;
         } else {
             // For folders
@@ -402,18 +424,14 @@ async function handlerDownload(name) {
                 ? contentDisposition.split('filename=')[1].replace(/"/g, '')
                 : 'download';
 
-            // Create a Blob from the response
             const blob = await response.blob();
-            // Create a link element
             const link = document.createElement('a');
             // Set the href to a URL created from the Blob
             link.href = window.URL.createObjectURL(blob);
             link.download = fileName;
             // Append the link to the document
             document.body.appendChild(link);
-            // Programmatically click the link to trigger the download
             link.click();
-            // Remove the link from the document
             link.remove();
 
             addLine("Download initiated!", "color2", 0);

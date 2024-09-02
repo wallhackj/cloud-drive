@@ -24,15 +24,15 @@ import org.springframework.session.data.redis.RedisIndexedSessionRepository;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 @Configuration
-@EnableWebSecurity @EnableMethodSecurity
+@EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
-    @Value(value = "${custom.max.session}")
-    private int maxSession;
-
     private final UserDetailsService detailsService;
     private final PasswordEncoder passwordEncoder;
     private final RedisIndexedSessionRepository redisIndexedSessionRepository;
     private final AuthEntryPoint authEntryPoint;
+    @Value(value = "${custom.max.session}")
+    private int maxSession;
 
     public SecurityConfig(AuthEntryPoint authEntryPoint,
                           UserDetailsService detailsService,
@@ -61,7 +61,8 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/", "/sign-in","/sign-up", "/static/**").permitAll();
+                    auth.requestMatchers("/", "/sign-in", "/sign-up", "/static/**")
+                            .permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(sessionManagement -> sessionManagement
@@ -77,7 +78,7 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                         .addLogoutHandler(new CustomLogoutHandler(this.redisIndexedSessionRepository))
                         .logoutSuccessUrl("/sign-in")
-                        .logoutSuccessHandler((request, response, authentication) ->{
+                        .logoutSuccessHandler((request, response, authentication) -> {
                                     SecurityContextHolder.clearContext();
                                     response.sendRedirect("/");
                                 }
