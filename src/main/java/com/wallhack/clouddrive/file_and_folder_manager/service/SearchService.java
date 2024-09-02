@@ -19,38 +19,35 @@ public class SearchService {
     private final S3AsyncClient client;
 
     public Mono<List<FileInfo>> listAllFiles(String bucketName) {
-        return Mono.fromFuture(bucketManager.bucketExists(bucketName)
-                .thenCompose(bucket -> {
-                    if (!bucket) {
-                        return CompletableFuture.failedFuture(new RuntimeException("Bucket does not exist"));
-                    }
+        return Mono.fromFuture(bucketManager.bucketExists(bucketName).thenCompose(bucket -> {
+            if (!bucket) {
+                return CompletableFuture.failedFuture(new RuntimeException("Bucket does not exist"));
+            }
 
-                    ListObjectsV2Request listV2Request = ListObjectsV2Request.builder()
-                            .bucket(bucketName)
-                            .build();
+            ListObjectsV2Request listV2Request = ListObjectsV2Request.builder().bucket(bucketName).build();
 
-                    return client.listObjectsV2(listV2Request)
-                            .thenApply(result -> result.contents()
-                                    .stream()
-                                    .map(s3Object -> new FileInfo(s3Object.key()
-                                            , s3Object.lastModified().toString(), null))
-                                    .collect(Collectors.toList()));
+            return client.listObjectsV2(listV2Request).thenApply(result -> result
+                    .contents()
+                    .stream()
+                    .map(s3Object -> new FileInfo(s3Object.key(), s3Object
+                            .lastModified()
+                            .toString(), null))
+                    .collect(Collectors.toList()));
 
-                }));
+        }));
     }
 
     public Mono<FileInfo> searchFile(String bucketName, String fileName) {
-        return listAllFiles(bucketName).flatMapMany(Flux::fromIterable)
-                .filter(fileInfo -> {
-                    String key = fileInfo.key().toLowerCase();
-                    String searchFileName = fileName.toLowerCase();
+        return listAllFiles(bucketName).flatMapMany(Flux::fromIterable).filter(fileInfo -> {
+            String key = fileInfo.key().toLowerCase();
+            String searchFileName = fileName.toLowerCase();
 
-//                    System.out.println(key.substring(fileInfo.key().lastIndexOf("/") + 1));
-//                    System.out.println(key.substring(fileInfo.key().lastIndexOf("/") + 1, fileInfo.key().lastIndexOf(".")));
+//      System.out.println(key.substring(fileInfo.key().lastIndexOf("/") + 1));
+//      System.out.println(key.substring(fileInfo.key().lastIndexOf("/") + 1, fileInfo.key().lastIndexOf(".")));
 
-                    return searchFileName.equals(key.substring(fileInfo.key().lastIndexOf("/") + 1))
-                            || searchFileName.equals(key.substring(fileInfo.key().lastIndexOf("/") + 1, fileInfo.key().lastIndexOf(".")));
-                })
-                .next();
+            return searchFileName.equals(key.substring(fileInfo.key()
+                    .lastIndexOf("/") + 1)) || searchFileName.equals(key.substring(fileInfo.key()
+                    .lastIndexOf("/") + 1, fileInfo.key().lastIndexOf(".")));
+        }).next();
     }
 }

@@ -5,7 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -33,7 +34,6 @@ public class BucketManagerService {
                     return false;
                 });
     }
-
 
     /**
      * Creates a bucket if it does not already exist.

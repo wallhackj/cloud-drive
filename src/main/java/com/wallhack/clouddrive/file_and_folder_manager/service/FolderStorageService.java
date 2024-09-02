@@ -32,7 +32,6 @@ public class FolderStorageService {
                 .all(uploadFolder -> uploadFolder)
                 .onErrorResume(e -> {
                     log.error("Failed to upload a folder{}", e.getMessage());
-
                     return Mono.just(false); // Return false in case of error
                 });
     }
@@ -43,17 +42,14 @@ public class FolderStorageService {
             return Mono.fromCallable(file::getInputStream)
                     .flatMap(inputStream -> {
                         FileInfo fileInfo = new FileInfo(key, "", inputStream);
-
                         return fileStorageService.uploadFile(bucketName, fileInfo);
                     })
                     .onErrorResume(IOException.class, e -> {
                         log.error("Failed to get input stream for file '{}': {}", key, e.getMessage());
-
                         return Mono.just(false);
                     });
         }
         log.warn("Skipping file with invalid name '{}'", key);
-
         return Mono.just(false);
     }
 
@@ -61,19 +57,16 @@ public class FolderStorageService {
         // Filename should not contain "." or "\\" or any other invalid characters
         // Adjust the regular expression as needed to restrict more characters
         String regex = "^[^\\\\.]+$"; // Regex to disallow '.' and '\\'
-
         return filename != null && filename.matches(regex);
     }
 
     public Mono<byte[]> downloadFolder(String bucketName, String folderName) {
-        return listKeysInFolder(bucketName, folderName)
-                .flatMapMany(Flux::fromIterable) // Flatten list of keys into Flux
+        return listKeysInFolder(bucketName, folderName).flatMapMany(Flux::fromIterable) // Flatten list of keys into Flux
                 .flatMap(key -> {
                     // Check if the key represents a folder by checking if it ends with '/'
                     if (key.endsWith("/")) {
                         // If it's a folder, recursively download its contents
                         String subfolderName = key.substring(0, key.length() - 1); // Remove trailing '/'
-
                         return downloadFolder(bucketName, subfolderName).flux(); // Recursively call downloadFolder
                     } else {
                         // If it's a file, download the file and return its data buffer Flux
@@ -110,8 +103,7 @@ public class FolderStorageService {
     }
 
     private Mono<Void> listKeysInFolderRecursive(ListObjectsV2Request listObjects, List<String> keys) {
-        return fetchListObjects(listObjects)
-                .flatMapMany(response -> {
+        return fetchListObjects(listObjects).flatMapMany(response -> {
                     response.contents().forEach(s3Object -> keys.add(s3Object.key()));
                     String continuationToken = response.nextContinuationToken();
                     if (continuationToken != null) {
@@ -131,8 +123,7 @@ public class FolderStorageService {
     }
 
     public Mono<Boolean> deleteFolder(String bucketName, String folderName) {
-        return listKeysInFolder(bucketName, folderName)
-                .flatMapMany(Flux::fromIterable)
+        return listKeysInFolder(bucketName, folderName).flatMapMany(Flux::fromIterable)
                 .flatMap(key -> {
                     if (key.endsWith("/")) {
                         // If it's a folder, recursively delete its contents
@@ -146,24 +137,20 @@ public class FolderStorageService {
                 .then(Mono.just(true))
                 .onErrorResume(e -> {
                     log.error("Failed to delete a folder{}", folderName);
-
                     return Mono.just(false);
                 });
     }
 
     public Mono<String> renameFolder(String bucketName, String folderName, String newFolderName) {
-        return listKeysInFolder(bucketName, folderName)
-                .flatMapMany(Flux::fromIterable)
+        return listKeysInFolder(bucketName, folderName).flatMapMany(Flux::fromIterable)
                 .flatMap(key -> {
                     // Construct the new key for each file
                     String newKey = key.replace(folderName, newFolderName);
-
                     return fileStorageService.renameOrMoveFile(bucketName, key, newKey);
                 })
                 .then(Mono.just(newFolderName))
                 .onErrorResume(e -> {
                     log.error("Failed to rename a folder{}", folderName);
-
                     return Mono.just(folderName); // Return original folder name if error occurs
                 });
     }

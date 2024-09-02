@@ -41,7 +41,8 @@ public class FolderController {
                                                              @RequestParam("folderName") String folderName) {
         return folderStorageService.downloadFolder(username, folderName)
                 .map(zipBytes -> ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + folderName + ".zip\"")
+                        .header(HttpHeaders.CONTENT_DISPOSITION,
+                                "attachment; filename=\"" + folderName + ".zip\"")
                         .body(zipBytes))
                 .onErrorResume(e -> {
                     log.error("Failed to download folder: {}", folderName, e);

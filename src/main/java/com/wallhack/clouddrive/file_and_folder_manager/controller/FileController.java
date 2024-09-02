@@ -29,7 +29,6 @@ public class FileController {
                         .thenReturn(ResponseEntity.ok("File uploaded successfully")))
                 .onErrorResume(e -> {
                     log.error("File upload failed :", e);
-
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
                 });
     }
@@ -56,11 +55,12 @@ public class FileController {
                 .map(deleteResult -> {
                     if (deleteResult) {
                         return ResponseEntity.ok("File deleted successfully");
-                    } else return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
-                })
-                .onErrorResume(e -> {
+                    } else return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body("File not found");
+                }).onErrorResume(e -> {
                     log.error("Failed to delete file: {}", fileName, e);
-                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .build());
                 });
     }
 
@@ -72,21 +72,20 @@ public class FileController {
                 .map(renameResult -> {
                     if (renameResult.equals(newFileName)) {
                         return ResponseEntity.ok("File renamed successfully");
-                    } else return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
-                })
-                .onErrorResume(e -> {
+                    } else return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body("File not found");
+                }).onErrorResume(e -> {
                     log.error("Failed to rename file: {}", fileName, e);
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
                 });
     }
 
     private Mono<byte[]> fluxOfDataBufferToByteArray(Flux<DataBuffer> flux) {
-        return DataBufferUtils.join(flux)
-                .map(dataBuffer -> {
-                    byte[] bytes = new byte[dataBuffer.readableByteCount()];
-                    dataBuffer.read(bytes);
-                    DataBufferUtils.release(dataBuffer);
-                    return bytes;
-                });
+        return DataBufferUtils.join(flux).map(dataBuffer -> {
+            byte[] bytes = new byte[dataBuffer.readableByteCount()];
+            dataBuffer.read(bytes);
+            DataBufferUtils.release(dataBuffer);
+            return bytes;
+        });
     }
 }
