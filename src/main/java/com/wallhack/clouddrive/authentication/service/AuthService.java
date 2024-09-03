@@ -109,7 +109,7 @@ public class AuthService {
 
         if (sessions.size() >= maxSession) {
             sessions.stream()
-                    .min(Comparator.comparing(SessionInformation::getLastRequest)) //
+                    .min(Comparator.comparing(SessionInformation::getLastRequest))
                     .ifPresent(sessionInfo -> this.redisIndexedSessionRepository.deleteById(sessionInfo.getSessionId()));
         }
     }

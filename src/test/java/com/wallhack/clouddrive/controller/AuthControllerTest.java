@@ -3,30 +3,27 @@ package com.wallhack.clouddrive.controller;
 import com.redis.testcontainers.RedisContainer;
 import com.wallhack.clouddrive.authentication.config.SecurityConfig;
 import com.wallhack.clouddrive.authentication.dto.AuthDTO;
-import com.wallhack.clouddrive.authentication.UserAlreadyExistException;
+import com.wallhack.clouddrive.authentication.repository.UsersRepository;
 import com.wallhack.clouddrive.authentication.service.AuthService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -36,20 +33,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Import(SecurityConfig.class)
 class AuthControllerTest {
-    @Autowired
-    private MockMvc mvc;
-
-    @MockBean
-    AuthService authService;
-
     @Container
     private static final PostgreSQLContainer<?> POSTGRE_SQL_CONTAINER = new PostgreSQLContainer<>(DockerImageName
             .parse("postgres:latest"));
-
     @Container
     private static final RedisContainer REDIS_CONTAINER = new RedisContainer(DockerImageName
             .parse("redis:alpine"))
             .withExposedPorts(6379);
+    @Autowired
+    private AuthService authService;
+    @Autowired
+    private UsersRepository userRepository;
+    @Autowired
+    private MockMvc mvc;
 
     @DynamicPropertySource
     static void configureProperties(@NotNull DynamicPropertyRegistry registry) {
@@ -63,8 +59,14 @@ class AuthControllerTest {
 
     @BeforeEach
     @Test
-    void givenRedisContainerConfiguredWithDynamicProperties_whenCheckingRunningStatus_thenStatusIsRunning() {
+    void givenContainerConfiguredWithDynamicProperties_whenCheckingRunningStatus_thenStatusIsRunning() {
         assertTrue(REDIS_CONTAINER.isRunning());
+        assertTrue(POSTGRE_SQL_CONTAINER.isRunning());
+    }
+
+    @BeforeEach
+    void setUp() {
+        userRepository.deleteAll();
     }
 
     @Test
@@ -88,17 +90,14 @@ class AuthControllerTest {
     @Test
     @SneakyThrows
     void testNewUserRegistrationSuccessfully() {
-        AuthDTO user = new AuthDTO("mike", "123");
-
-        when(authService.register(user)).thenReturn("login");
 
         mvc.perform(post("/sign-up")
                         .param("username", "mike")
                         .param("password", "123"))
-                .andExpect(status().is3xxRedirection()) // Expecting a redirection
-                .andExpect(redirectedUrl("/sign-in")); // Expect redirection to /sign-in
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/sign-in"));
 
-        verify(authService).register(user);
+        Assertions.assertNotNull(userRepository.findByUsername("mike"));
     }
 
     @Test
@@ -106,25 +105,21 @@ class AuthControllerTest {
     void testNewUserRegistrationSameUsernameError() {
         AuthDTO user = new AuthDTO("mike", "123");
 
-        when(authService.register(user)).thenThrow(new UserAlreadyExistException("User already exists"));
+        authService.register(user);
+        Assertions.assertNotNull(userRepository.findByUsername("mike"));
 
         mvc.perform(post("/sign-up")
-                        .param("username", "mike")
-                        .param("password", "123"))
+                        .param("username", user.getUsername())
+                        .param("password", user.getPassword()))
                 .andExpect(status().isOk()) // Expecting a successful response as the page is rendered
                 .andExpect(view().name("auth/registration")) // Check that the view is the registration page
-                .andExpect(model().attribute("error", "Some error: User already exists")); // Check for the error message
-
-        // Verify that the register method was called with the correct argument
-        verify(authService).register(user);
+                .andExpect(model().attribute("error", "Some error: mike exists")); // Check for the error message
     }
 
     @Test
     @SneakyThrows
     void testNewUserRegistrationValidationError() {
         AuthDTO user = new AuthDTO();
-
-        when(authService.register(user)).thenThrow(new IllegalArgumentException("Username and password must not be empty"));
 
         mvc.perform(post("/sign-up")
                         .flashAttr("authDTO", user))
@@ -138,11 +133,8 @@ class AuthControllerTest {
     public void testRegistrationUsernameLess3SymbolsFails() {
         AuthDTO user = new AuthDTO("me", "mimi");
 
-        when(authService.register(user)).thenReturn("login");
-
         mvc.perform(post("/sign-up")
-                        .param("username", "me")
-                        .param("password", "mimi"))
+                        .flashAttr("authDTO", user))
                 .andExpect(status().isOk())
                 .andExpect(view().name("auth/registration"))
                 .andExpect(model().attribute("error", "Username or password is wrong?"));
@@ -153,12 +145,7 @@ class AuthControllerTest {
     void testUserLogin() {
         AuthDTO user = new AuthDTO("mike", "123");
 
-        when(authService.login(eq(user), any(HttpServletRequest.class), any(HttpServletResponse.class)))
-                .thenReturn("auth/login");
-
-        mvc.perform(post("/sign-in").flashAttr("authDTO", user)
-                        .param("username", "mike")
-                        .param("password", "123"))
+        mvc.perform(post("/sign-in").flashAttr("authDTO", user))
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(view().name("auth/login"));
     }
@@ -177,18 +164,18 @@ class AuthControllerTest {
 
     @Test
     @SneakyThrows
+    @Transactional
     void testUserLoginWithBadCredentials() {
-        AuthDTO user = new AuthDTO("mik", "123");
+        AuthDTO user = new AuthDTO("mike", "123");
 
-        when(authService.login(eq(user), any(HttpServletRequest.class), any(HttpServletResponse.class)))
-                .thenThrow(new BadCredentialsException("Bad credentials"));
+        // Register the user first
+        authService.register(user);
 
-        mvc.perform(post("/sign-in").flashAttr("authDTO", user)
-                        .param("username", "mik")
-                        .param("password", "123"))
+        mvc.perform(post("/sign-in")
+                        .param("username", "mike")
+                        .param("password", "wrongpassword"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("auth/login"))
                 .andExpect(model().attribute("error", "Bad Credentials"));
     }
-
 }
