@@ -5,9 +5,10 @@ import com.wallhack.clouddrive.authentication.repository.UsersRepository;
 import com.wallhack.clouddrive.authentication.service.UsersService;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -18,18 +19,17 @@ import org.testcontainers.utility.DockerImageName;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mockito.Mockito.when;
-
-@Testcontainers @SpringBootTest
+@Testcontainers
+@SpringBootTest
 public class UserServiceTest {
     @Container
     private static final PostgreSQLContainer<?> POSTGRE_SQL_CONTAINER = new PostgreSQLContainer<>(DockerImageName
             .parse("postgres:latest"));
 
-    @MockBean
+    @Autowired
     UsersService usersService;
 
-    @MockBean
+    @Autowired
     UsersRepository usersRepository;
 
     @DynamicPropertySource
@@ -39,91 +39,72 @@ public class UserServiceTest {
         registry.add("spring.datasource.password", POSTGRE_SQL_CONTAINER::getPassword);
     }
 
+    @BeforeEach
+    void setUp() {
+        usersRepository.deleteAll();
+    }
+
     @Test
     void testSaveUserToDB() {
         UsersPOJO user = new UsersPOJO();
         user.setUsername("mike");
         user.setPassword("123");
 
-        when(usersService.saveUser(user)).thenReturn(true);
+        boolean isSaved = usersService.saveUser(user);
+        Assertions.assertTrue(isSaved);
 
-        when(usersRepository.findByUsername(user.getUsername())).thenReturn(Optional.of(user));
-        UsersPOJO getUser = usersRepository.findByUsername(user.getUsername()).orElse(null);
-
-        Assertions.assertNotNull(getUser);
-        Assertions.assertEquals(user.getUsername(), getUser.getUsername());
-        Assertions.assertEquals(user.getPassword(), getUser.getPassword());
+        Optional<UsersPOJO> retrievedUser = usersRepository.findByUsername("mike");
+        Assertions.assertTrue(retrievedUser.isPresent());
+        Assertions.assertEquals("mike", retrievedUser.get().getUsername());
+        Assertions.assertEquals("123", retrievedUser.get().getPassword());
     }
 
     @Test
     void testSaveUserValidationError() {
         UsersPOJO user = new UsersPOJO();
 
-        when(usersService.saveUser(user))
-                .thenThrow(new IllegalArgumentException("Username and password must not be empty"));
+        try {
+            usersService.saveUser(user);
+            Assertions.fail("Expected exception not thrown");
+        } catch (IllegalArgumentException e) {
+            Assertions.assertEquals("Username and password must not be empty", e.getMessage());
+        }
     }
 
     @Test
     void getAllUsersFromRepository() {
-        UsersPOJO user = new UsersPOJO();
-        user.setUsername("mike");
-        user.setPassword("123");
-
-        when(usersRepository.findByUsername("mike")).thenReturn(Optional.of(user));
-        UsersPOJO user1 = usersRepository.findByUsername("mike").orElse(null);
-
-        Assertions.assertNotNull(user1);
-        Assertions.assertEquals(user1.getUsername(), "mike");
-        Assertions.assertEquals(user1.getPassword(), "123");
+        UsersPOJO user1 = new UsersPOJO();
+        user1.setUsername("mike");
+        user1.setPassword("123");
 
         UsersPOJO user2 = new UsersPOJO();
         user2.setUsername("mike2");
         user2.setPassword("456");
-        when(usersService.saveUser(user2)).thenReturn(true);
 
-        List<UsersPOJO> users = List.of(user1, user2);
-        when(usersService.getAllUsers()).thenReturn(users);
+        usersService.saveUser(user1);
+        usersService.saveUser(user2);
 
-        List<UsersPOJO> retrievedUsers = usersService.getAllUsers();
-        Assertions.assertNotNull(retrievedUsers);
-        Assertions.assertEquals(retrievedUsers.size(), 2);
-        Assertions.assertEquals(retrievedUsers.get(0).getUsername(), "mike");
-        Assertions.assertEquals(retrievedUsers.get(1).getUsername(), "mike2");
+        List<UsersPOJO> users = usersService.getAllUsers();
+        Assertions.assertNotNull(users);
+        Assertions.assertEquals(2, users.size());
+        Assertions.assertEquals("mike", users.get(0).getUsername());
+        Assertions.assertEquals("mike2", users.get(1).getUsername());
     }
 
     @Test
     void deleteUserFromRepository() {
-        // Crearea unui utilizator existent
         UsersPOJO user = new UsersPOJO();
-        user.setId(1L);
         user.setUsername("mike");
         user.setPassword("123");
 
-        // Simularea comportamentului repository-ului pentru a găsi utilizatorul
-        when(usersRepository.findByUsername("mike")).thenReturn(Optional.of(user));
+        usersService.saveUser(user);
+        Optional<UsersPOJO> foundUser = usersRepository.findByUsername("mike");
+        Assertions.assertTrue(foundUser.isPresent());
 
-        // Obține utilizatorul din repository
-        UsersPOJO foundUser = usersRepository.findByUsername("mike").orElse(null);
-
-        // Verifică că utilizatorul a fost găsit
-        Assertions.assertNotNull(foundUser);
-        Assertions.assertEquals("mike", foundUser.getUsername());
-        Assertions.assertEquals("123", foundUser.getPassword());
-
-        // Simulează ștergerea utilizatorului
-        when(usersService.deleteUser(foundUser.getId())).thenReturn(true);
-
-        // Șterge utilizatorul
-        boolean isDeleted = usersService.deleteUser(foundUser.getId());
-
-        // Verifică că ștergerea a avut succes
+        boolean isDeleted = usersService.deleteUser(foundUser.get().getId());
         Assertions.assertTrue(isDeleted);
 
-        // Simulează comportamentul repository-ului după ștergerea utilizatorului
-        when(usersRepository.findByUsername("mike")).thenReturn(Optional.empty());
-
-        // Verifică că utilizatorul nu mai poate fi găsit
-        UsersPOJO deletedUser = usersRepository.findByUsername("mike").orElse(null);
-        Assertions.assertNull(deletedUser);
+        Optional<UsersPOJO> deletedUser = usersRepository.findByUsername("mike");
+        Assertions.assertFalse(deletedUser.isPresent());
     }
 }

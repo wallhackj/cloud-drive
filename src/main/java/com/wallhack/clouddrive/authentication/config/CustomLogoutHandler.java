@@ -9,7 +9,8 @@ import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.Session;
 import org.springframework.stereotype.Component;
 
-@Component @AllArgsConstructor
+@Component
+@AllArgsConstructor
 public class CustomLogoutHandler implements LogoutHandler {
     private final FindByIndexNameSessionRepository<? extends Session> redisIndexedSessionRepository;
 

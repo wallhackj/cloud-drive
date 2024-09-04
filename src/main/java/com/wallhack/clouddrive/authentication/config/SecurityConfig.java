@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -24,15 +23,15 @@ import org.springframework.session.data.redis.RedisIndexedSessionRepository;
 import org.springframework.session.security.SpringSessionBackedSessionRegistry;
 
 @Configuration
-@EnableWebSecurity @EnableMethodSecurity
+@EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
-    @Value(value = "${custom.max.session}")
-    private int maxSession;
-
     private final UserDetailsService detailsService;
     private final PasswordEncoder passwordEncoder;
     private final RedisIndexedSessionRepository redisIndexedSessionRepository;
     private final AuthEntryPoint authEntryPoint;
+    @Value(value = "${custom.max.session}")
+    private int maxSession;
 
     public SecurityConfig(AuthEntryPoint authEntryPoint,
                           UserDetailsService detailsService,
@@ -45,23 +44,18 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider() {
+    public AuthenticationManager authenticationManager() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setPasswordEncoder(this.passwordEncoder);
         provider.setUserDetailsService(this.detailsService);
-        return provider;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager() {
-        return new ProviderManager(authenticationProvider());
+        return new ProviderManager(provider);
     }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/", "/sign-in","/sign-up", "/static/**").permitAll();
+                    auth.requestMatchers("/", "/sign-in", "/sign-up", "/static/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(sessionManagement -> sessionManagement
@@ -77,7 +71,7 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                         .addLogoutHandler(new CustomLogoutHandler(this.redisIndexedSessionRepository))
                         .logoutSuccessUrl("/sign-in")
-                        .logoutSuccessHandler((request, response, authentication) ->{
+                        .logoutSuccessHandler((request, response, authentication) -> {
                                     SecurityContextHolder.clearContext();
                                     response.sendRedirect("/");
                                 }

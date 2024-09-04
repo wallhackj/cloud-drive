@@ -15,6 +15,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoHandlerFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ModelAndView handleNotFound(NoHandlerFoundException ex) {
+        if (ex.getRequestURL().endsWith("/favicon.ico")) {
+            return new ModelAndView("forward:/static/favicon.ico");
+        }
         log.error(ex.getMessage(), ex);
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("not_found");
