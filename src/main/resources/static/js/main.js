@@ -93,7 +93,7 @@ async function commander(cmd) {
             setTimeout(handlerUploadFolder, 80);
             break;
         case "find":
-            await updateSearchFile(args.join(' '));
+            await updateSearchFile(args);
             loopLines(searched, "color2 margin", 80)
             break;
         case "uploadfile":
