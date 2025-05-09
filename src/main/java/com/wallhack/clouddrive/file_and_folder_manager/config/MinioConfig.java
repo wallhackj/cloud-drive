@@ -1,5 +1,6 @@
 package com.wallhack.clouddrive.file_and_folder_manager.config;
 
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,25 +14,22 @@ import software.amazon.awssdk.services.s3.internal.crt.S3CrtAsyncClient;
 import java.net.URI;
 
 @Configuration
+@AllArgsConstructor
 public class MinioConfig {
-    @Value("${minio.access.url}")
-    private String minioUrl;
-
-    @Value("${minio.access.name}")
-    private String accessKey;
-
-    @Value("${minio.access.secret}")
-    private String accessSecret;
+    private final MinioProperties minioProperties;
 
     @Bean
     public S3AsyncClient generateMinioClient(){
-        StaticCredentialsProvider provider = StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, accessSecret));
+        StaticCredentialsProvider provider = StaticCredentialsProvider
+                .create(AwsBasicCredentials
+                        .create(minioProperties.getAccessKey(),
+                                minioProperties.getAccessSecret()));
+
         return S3CrtAsyncClient.builder()
                 .forcePathStyle(true)
-                .endpointOverride(URI.create(minioUrl))
+                .endpointOverride(URI.create(minioProperties.getMinioUrl()))
                 .region(Region.EU_CENTRAL_1)
                 .credentialsProvider(provider)
                 .build();
     }
-
 }
