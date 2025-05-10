@@ -35,7 +35,7 @@ public class FileController {
 
     @GetMapping("/downloadFile")
     public Mono<ResponseEntity<byte[]>> handleFileDownload(@RequestParam("username") String username,
-                                                                     @RequestParam("fileName") String fileName) {
+                                                           @RequestParam("fileName") String fileName) {
         return fileService.downloadFile(username, fileName)
                 .collectList()
                 .map(byteBuffers -> {
