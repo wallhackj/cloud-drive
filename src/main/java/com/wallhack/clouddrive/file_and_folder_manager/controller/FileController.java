@@ -4,16 +4,15 @@ import com.wallhack.clouddrive.file_and_folder_manager.entity.FileInfo;
 import com.wallhack.clouddrive.file_and_folder_manager.service.FileStorageService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.nio.ByteBuffer;
 
 @Slf4j
 @Controller
@@ -36,12 +35,24 @@ public class FileController {
 
     @GetMapping("/downloadFile")
     public Mono<ResponseEntity<byte[]>> handleFileDownload(@RequestParam("username") String username,
-                                                           @RequestParam("fileName") String fileName) {
+                                                                     @RequestParam("fileName") String fileName) {
         return fileService.downloadFile(username, fileName)
-                .flatMap(this::fluxOfDataBufferToByteArray)
+                .collectList()
+                .map(byteBuffers -> {
+                    int total = byteBuffers.stream().mapToInt(ByteBuffer::remaining).sum();
+                    byte[] arr = new byte[total];
+                    int pos = 0;
+                    for (ByteBuffer buffer : byteBuffers) {
+                        int len = buffer.remaining();
+                        buffer.rewind();
+                        buffer.get(arr, pos, len);
+                        pos += len;
+                    }
+                    return arr;
+                })
                 .map(bytes -> ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                        .body(bytes)) // Set the response body as the byte array because it's not encrypted :(
+                        .body(bytes)) // Set the response body as the byte array because it's not encrypted
                 .onErrorResume(e -> {
                     log.error("Failed to download file: {}", fileName, e);
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
@@ -78,14 +89,5 @@ public class FileController {
                     log.error("Failed to rename file: {}", fileName, e);
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
                 });
-    }
-
-    private Mono<byte[]> fluxOfDataBufferToByteArray(Flux<DataBuffer> flux) {
-        return DataBufferUtils.join(flux).map(dataBuffer -> {
-            byte[] bytes = new byte[dataBuffer.readableByteCount()];
-            dataBuffer.read(bytes);
-            DataBufferUtils.release(dataBuffer);
-            return bytes;
-        });
     }
 }

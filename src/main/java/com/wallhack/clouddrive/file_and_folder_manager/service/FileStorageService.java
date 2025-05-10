@@ -3,7 +3,6 @@ package com.wallhack.clouddrive.file_and_folder_manager.service;
 import com.wallhack.clouddrive.file_and_folder_manager.entity.FileInfo;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.stereotype.Service;
@@ -37,19 +36,18 @@ public class FileStorageService {
                 .key(file.key())
                 .build();
 
-        try {
-            return Mono.fromFuture(() -> bucketManager.createBucket(bucketName)
-                            .thenCompose(v -> client.putObject(putRequest,
-                                    AsyncRequestBody.fromPublisher(toFlux(file.file())))))
-                    .then(Mono.just(true)).onErrorResume(e -> {
-                        log.error("Failed to upload file", e);
-                        return Mono.just(false);
-                    });
-
-        } catch (Exception e) {
-            log.error("Error in bucketservice", e);
-            return Mono.error(e);
-        }
+        return Mono.defer(() -> Mono.fromFuture(bucketManager.createBucket(bucketName))
+                        .onErrorResume(e -> {
+                            log.error("Error in bucket service", e);
+                            return Mono.error(e);
+                        })
+                        .flatMap(v -> Mono.fromFuture(client.putObject(putRequest, AsyncRequestBody
+                                .fromPublisher(toFlux(file.file()))))))
+                .thenReturn(true)
+                .onErrorResume(e -> {
+                    log.error("Failed to upload file", e);
+                    return Mono.just(false);
+                });
     }
 
     public Mono<Boolean> deleteFile(String bucketName, String key) {
@@ -58,24 +56,24 @@ public class FileStorageService {
                 .key(key)
                 .build();
 
-        return Mono.fromFuture(() -> client.deleteObject(deleteRequest))
-                .thenReturn(true).onErrorResume(e -> {
+        return Mono.defer(() -> Mono.fromFuture(client.deleteObject(deleteRequest)))
+                .thenReturn(true)
+                .onErrorResume(e -> {
                     log.error("Failed to delete file", e);
                     return Mono.just(false);
                 });
     }
 
-    public Mono<Flux<DataBuffer>> downloadFile(String bucketName, String key) {
+    public Flux<ByteBuffer> downloadFile(String bucketName, String key) {
         GetObjectRequest getRequest = GetObjectRequest.builder()
                 .bucket(bucketName)
                 .key(key)
                 .build();
 
-        return Mono.fromFuture(() -> client.getObject(getRequest, AsyncResponseTransformer.toPublisher())).flatMap(publisher -> {
-            Flux<DataBuffer> dataBufferFlux = Flux.from(publisher)
-                    .map(byteBuffer -> new DefaultDataBufferFactory().wrap(byteBuffer));
-            return Mono.just(dataBufferFlux);
-        }).onErrorResume(e -> {
+        return Mono.defer(() -> Mono.fromFuture(client.getObject(getRequest,
+                        AsyncResponseTransformer.toPublisher())))
+                .flatMapMany(Flux::from)
+                .onErrorResume(e -> {
             log.error("Failed to download file", e);
             return Mono.error(new RuntimeException("Failed to download file", e));
         });
@@ -91,13 +89,14 @@ public class FileStorageService {
                 .metadataDirective(MetadataDirective.REPLACE)
                 .build();
 
-        return Mono.fromFuture(() -> client.copyObject(copyRequest))
-                .flatMap(copyResponse -> deleteFile(bucketName, key)
-                        .flatMap(deleteResponse -> deleteResponse ?
-                                Mono.just(newKey) : Mono.error(new RuntimeException("Failed to delete original file"))))
+        return Mono.defer(() -> Mono.fromFuture(client.copyObject(copyRequest)))
+                .then(deleteFile(bucketName, key))
+                .flatMap(deleted -> deleted
+                        ? Mono.just(newKey)
+                        : Mono.error(new RuntimeException("Failed to delete original file")))
                 .onErrorResume(e -> {
                     log.error("Failed to rename file", e);
-                    return Mono.error(new RuntimeException("Failed to rename original file", e));
+                    return Mono.error(new RuntimeException("Failed to rename file", e));
                 });
     }
 }

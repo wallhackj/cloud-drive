@@ -69,8 +69,7 @@ public class FolderStorageService {
                         return downloadFolder(bucketName, subfolderName).flux(); // Recursively call downloadFolder
                     } else {
                         // If it's a file, download the file and return its data buffer Flux
-                        return fileStorageService.downloadFile(bucketName, key)
-                                .flatMapMany(Flux::from); // Flatten CompletableFuture<Flux<DataBuffer>> to Flux<DataBuffer>
+                        return fileStorageService.downloadFile(bucketName, key);
                     }
                 })
                 .cast(DataBuffer.class)

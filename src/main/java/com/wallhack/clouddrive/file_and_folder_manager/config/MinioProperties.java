@@ -1,6 +1,5 @@
 package com.wallhack.clouddrive.file_and_folder_manager.config;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;

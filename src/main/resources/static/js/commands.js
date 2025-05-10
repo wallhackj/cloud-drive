@@ -54,15 +54,20 @@ async function updateFiles() {
     try {
         // Ensure the username is always updated before fetching files
         await updateWhoami();
-        list = (await listFiles()).map(file => `${file.lastModified}   ${file.key}`);
+        const newList = (await listFiles()).map(file => `${file.lastModified}   ${file.key}`);
+        if (JSON.stringify(newList) !== JSON.stringify(list)) {
+                    list = newList;
+                }
     } catch (error) {
         addLine("Updating error!", "color2", 0);
     }
 }
 
 // Initialize the application
-window.addEventListener("load", async () => {
-    await updateFiles();  // Combine updating username and files into one function
+document.addEventListener("DOMContentLoaded", () => {
+    setInterval(updateWhoami, 5000);
+    setInterval(updateFiles, 3000);
+    updateFiles();
 });
 
 // Social links data
