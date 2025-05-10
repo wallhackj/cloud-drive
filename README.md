@@ -33,7 +33,7 @@ Multi-user file cloud. Users of the service can use it to upload and store files
 1. Clone repository
 
 ```shell
-git clone https://github.com/TurboGoose/cloud-file-storage.git
+git clone https://github.com/wallhackj/cloud-drive.git
 ```
 
 2. `cd` to the root folder of the cloned repository 
